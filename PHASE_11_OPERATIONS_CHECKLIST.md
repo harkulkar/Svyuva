@@ -1,0 +1,27 @@
+# Phase 11 operations checklist
+
+- [x] Health check (`GET /api/health`, `GET /api/health/db`, `GET /api/admin/system-health`)
+- [x] Monitoring (structured logs, slow queries, admin widgets)
+- [x] Logging (`OPERATIONS_LOGGING.md`)
+- [x] Request IDs (`X-Request-ID`)
+- [x] Alerts documented (`ALERTING.md`) — destinations TODO: CONFIGURE
+- [x] Database backup policy documented
+- [ ] Backup verification executed against a real backup store — **NOT_EXECUTED** (script present)
+- [ ] Restore procedure drill — **NOT_EXECUTED**
+- [x] Storage backup documented
+- [x] Storage verification script (read-only)
+- [x] Disaster recovery scenarios documented
+- [x] Incident response documented
+- [x] Admin audit (`/admin/audit-logs` filters + pagination)
+- [x] Data correction workflow (allow-listed fields, audit)
+- [x] Retention documentation (`DATA_RETENTION.md`)
+- [x] Maintenance scripts (read-only default)
+- [x] Dependency maintenance documented
+- [x] Change management documented
+- [x] Maintenance mode
+- [x] Error pages (404 / 403 / 500 / maintenance)
+- [x] Performance monitoring documented
+- [x] Load testing plan documented (not run on production)
+- [x] Smoke tests documented
+- [x] Support guide
+- [x] Operations runbook

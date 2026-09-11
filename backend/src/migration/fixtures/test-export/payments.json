@@ -1,0 +1,12 @@
+[
+  {
+    "id": "PAY-TEST-1",
+    "student_id": "STU-TEST-1",
+    "amount": 1,
+    "status": "success",
+    "txn_id": "TXN-FIXTURE-1",
+    "card_number": "4111111111111111",
+    "cvv": "123",
+    "otp": "000000"
+  }
+]

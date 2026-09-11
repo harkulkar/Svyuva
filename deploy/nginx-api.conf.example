@@ -1,0 +1,23 @@
+# Example reverse proxy for the API. TLS termination: TODO: CONFIGURE
+# CORS is enforced in the Node app (FRONTEND_ORIGIN / FRONTEND_URL). Never set Access-Control-Allow-Origin: *.
+
+upstream svysy_api {
+    server 127.0.0.1:4000;
+}
+
+server {
+    listen 80;
+    server_name TODO_CONFIGURE_API_HOST;
+
+    client_max_body_size 10m;
+
+    location / {
+        proxy_pass http://svysy_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-Id $request_id;
+    }
+}

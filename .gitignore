@@ -1,0 +1,57 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Dependencies
+node_modules/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!**/.env.example
+frontend/.env
+backend/.env
+*.pem
+*.key
+credentials.json
+serviceAccount*.json
+
+# Builds
+dist/
+build/
+frontend/dist/
+backend/dist/
+*.tsbuildinfo
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Uploads and local storage (never commit user documents)
+uploads/
+tmp/
+temp/
+backend/storage/knowledge/
+
+# Migration generated artefacts (may contain production identifiers after a real run)
+migration/reports/*.json
+migration/reports/*.csv
+!migration/reports/.gitkeep
+migration/maps/*.json
+!migration/maps/.gitkeep
+migration/logs/
+
+# Python venv accidentally copied from parent workspace
+venv/

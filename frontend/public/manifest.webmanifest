@@ -1,0 +1,31 @@
+{
+  "name": "SV Yuva Suraksha Yojana",
+  "short_name": "SVYSY",
+  "description": "Official portal of Swami Vivekananda Yuva Suraksha Yojana, Directorate of Higher Education, Government of Maharashtra.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f1ea",
+  "theme_color": "#0B3C6F",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

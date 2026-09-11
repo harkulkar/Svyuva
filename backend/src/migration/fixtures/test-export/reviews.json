@@ -1,0 +1,11 @@
+[
+  {
+    "id": "REV-TEST-1",
+    "student_id": "STU-TEST-1",
+    "reviewer_id": "USER-TEST-ADMIN",
+    "status": "approved",
+    "comments": "Fixture historical review",
+    "entity_type": "STUDENT",
+    "review_date": "2025-06-01"
+  }
+]

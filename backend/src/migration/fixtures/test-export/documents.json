@@ -1,0 +1,15 @@
+[
+  {
+    "id": "DOC-TEST-1",
+    "student_id": "STU-TEST-1",
+    "filename": "id-card.pdf",
+    "path": "uploads1/students/STU-TEST-1/id-card.pdf",
+    "mime": "application/pdf",
+    "type": "ID"
+  },
+  {
+    "id": "DOC-TEST-MISSING",
+    "student_id": "STU-TEST-1",
+    "filename": "missing.pdf"
+  }
+]

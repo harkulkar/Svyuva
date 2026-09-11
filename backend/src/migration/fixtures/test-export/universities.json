@@ -1,0 +1,11 @@
+[
+  {
+    "id": "UNI-TEST-1",
+    "name": "TEST FIXTURE University One",
+    "code": "TFU1",
+    "status": "active"
+  },
+  {
+    "id": "UNI-TEST-2"
+  }
+]

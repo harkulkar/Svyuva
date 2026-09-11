@@ -1,0 +1,12 @@
+node_modules
+.git
+frontend/dist
+backend/dist
+.env
+.env.*
+!.env.example
+*.log
+coverage
+migration/reports
+migration/maps
+migration/logs

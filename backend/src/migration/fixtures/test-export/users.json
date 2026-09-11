@@ -1,0 +1,21 @@
+[
+  {
+    "id": "USER-TEST-ADMIN",
+    "email": "fixture.admin@example.test",
+    "name": "Fixture Admin",
+    "role": "admin",
+    "status": "active",
+    "password": "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
+  },
+  {
+    "id": "USER-TEST-COLLEGE",
+    "email": "fixture.college@example.test",
+    "name": "Fixture College User",
+    "role": "college",
+    "status": "active",
+    "institute_id": "INST-TEST-1",
+    "university_id": "UNI-TEST-1",
+    "password": "5f4dcc3b5aa765d61d8327deb882cf99",
+    "mobile": "9876543210"
+  }
+]

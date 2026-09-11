@@ -1,0 +1,7 @@
+{
+  "title": "Final reconciliation report",
+  "status": "NOT_EXECUTED",
+  "reason": "BLOCKED — PRODUCTION DECISION REQUIRED. No unexplained discrepancies were invented. Run npm run migration:reconcile against an authorized export and staging URI, then copy operator-reviewed totals here.",
+  "discrepancies": [],
+  "cutoverBlocked": true
+}

@@ -1,0 +1,6 @@
+{
+  "title": "Final missing records report",
+  "status": "NOT_EXECUTED",
+  "reason": "BLOCKED — PRODUCTION DECISION REQUIRED. Missing-record lists are produced by the Phase 8 pipeline after a real export is loaded. This file is a placeholder so cutover cannot be marked complete with empty invented data.",
+  "records": []
+}

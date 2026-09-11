@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /college
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /forbidden
+Disallow: /error
+Disallow: /maintenance
+Disallow: /session-expired
+Disallow: /network-error
+
+Sitemap: https://svyuvasuraksha.org/sitemap.xml

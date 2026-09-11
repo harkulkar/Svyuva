@@ -1,0 +1,6 @@
+{
+  "title": "Final missing files report",
+  "status": "NOT_EXECUTED",
+  "reason": "BLOCKED — PRODUCTION DECISION REQUIRED. File inventory requires STORAGE_SOURCE from an authorized archive, not a live scrape of admin.svyuvasuraksha.org.",
+  "files": []
+}

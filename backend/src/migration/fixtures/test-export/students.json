@@ -1,0 +1,49 @@
+[
+  {
+    "id": "STU-TEST-1",
+    "institute_id": "INST-TEST-1",
+    "studentId": "S001",
+    "enrollmentNumber": "ENR001",
+    "rollNumber": "R001",
+    "firstName": "Fixture",
+    "lastName": "Student",
+    "gender": "Male",
+    "dateOfBirth": "2005-06-15",
+    "mobile": "9876543299",
+    "course": "B.A.",
+    "year": "First Year",
+    "academicYear": "2025-26",
+    "status": "active"
+  },
+  {
+    "id": "STU-TEST-ORPHAN",
+    "institute_id": "INST-MISSING",
+    "studentId": "S002",
+    "enrollmentNumber": "ENR002",
+    "rollNumber": "R002",
+    "firstName": "Orphan",
+    "lastName": "Student",
+    "gender": "Female",
+    "dateOfBirth": "2005-01-01",
+    "mobile": "9876543298",
+    "course": "B.Com.",
+    "year": "First Year",
+    "academicYear": "2025-26"
+  },
+  {
+    "id": "STU-TEST-DUP",
+    "institute_id": "INST-TEST-1",
+    "studentId": "S001",
+    "enrollmentNumber": "ENR001-DUP",
+    "rollNumber": "R003",
+    "firstName": "Dup",
+    "lastName": "Student",
+    "gender": "Male",
+    "dateOfBirth": "2005-02-02",
+    "mobile": "9876543297",
+    "course": "B.Sc.",
+    "year": "First Year",
+    "academicYear": "2025-26",
+    "status": "active"
+  }
+]

@@ -1,0 +1,18 @@
+{
+  "title": "Final migration report",
+  "status": "NOT_EXECUTED",
+  "reason": "BLOCKED — PRODUCTION DECISION REQUIRED: no authorized final legacy export, no verified production backup drill, no UAT sign-off, no written cutover authorization. Phase 10 does not run production migration automatically.",
+  "oldSystemModified": false,
+  "productionDnsChanged": false,
+  "entities": {
+    "universities": { "legacyCount": null, "newCount": null, "migrated": 0, "failed": 0, "skipped": 0, "manualReview": "NOT_RUN" },
+    "institutes": { "legacyCount": null, "newCount": null, "migrated": 0, "failed": 0, "skipped": 0, "manualReview": "NOT_RUN" },
+    "users": { "legacyCount": null, "newCount": null, "migrated": 0, "failed": 0, "skipped": 0, "manualReview": "NOT_RUN" },
+    "students": { "legacyCount": null, "newCount": null, "migrated": 0, "failed": 0, "skipped": 0, "manualReview": "NOT_RUN" },
+    "insurance": { "legacyCount": null, "newCount": null, "migrated": 0, "failed": 0, "skipped": 0, "manualReview": "NOT_RUN" },
+    "documents": { "legacyCount": null, "newCount": null, "migrated": 0, "failed": 0, "skipped": 0, "manualReview": "NOT_RUN" },
+    "payments": { "legacyCount": null, "newCount": null, "migrated": 0, "failed": 0, "skipped": 0, "manualReview": "NOT_RUN" },
+    "reviews": { "legacyCount": null, "newCount": null, "migrated": 0, "failed": 0, "skipped": 0, "manualReview": "NOT_RUN" },
+    "ecards": { "legacyCount": null, "newCount": null, "migrated": 0, "failed": 0, "skipped": 0, "manualReview": "NOT_RUN" }
+  }
+}

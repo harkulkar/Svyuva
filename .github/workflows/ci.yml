@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, development, develop]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm run test:unit
+      - name: Production build
+        run: npm run build
+        env:
+          VITE_API_URL: http://localhost:4000
+      - name: Dependency audit
+        run: npm audit --workspaces
+        continue-on-error: true
+
+# Production deploy is intentionally absent.
+# Pushing to main must not publish to production without operator approval.
+# MongoDB integration tests require Atlas and are run locally / on staging:
+#   npm run test:integration
+#   npm run test:e2e
+# See DEPLOYMENT.md.

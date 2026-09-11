@@ -1,0 +1,7 @@
+{
+  "title": "Final reconciliation report",
+  "status": "NOT_EXECUTED",
+  "location": "Also see migration/cutover/final-reconciliation-report.json",
+  "reason": "BLOCKED — PRODUCTION DECISION REQUIRED. No unexplained discrepancies were invented.",
+  "cutoverBlocked": true
+}

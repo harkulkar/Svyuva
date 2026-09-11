@@ -1,0 +1,48 @@
+[
+  {
+    "id": "INST-TEST-1",
+    "university_id": "UNI-TEST-1",
+    "name": "TEST FIXTURE Institute One",
+    "email": "institute.one@example.test",
+    "address": "Fixture address, Pune",
+    "district": "Pune",
+    "taluka": "Haveli",
+    "jd_region": "Pune",
+    "mobile": "9876543210",
+    "principal_name": "Fixture Principal",
+    "college_type": "Aided",
+    "location_type": "Urban",
+    "minority_type": "Non Minority",
+    "linguistic_type": "Non Linguistic",
+    "exclusive_type": "Non Exclusive",
+    "status": "approved"
+  },
+  {
+    "id": "INST-TEST-ORPHAN",
+    "university_id": "UNI-DOES-NOT-EXIST",
+    "name": "TEST FIXTURE Orphan Institute",
+    "email": "orphan@example.test",
+    "address": "Nowhere",
+    "district": "Pune",
+    "taluka": "Haveli",
+    "jd_region": "Pune",
+    "mobile": "9876543211",
+    "principal_name": "Orphan Principal",
+    "college_type": "Aided",
+    "status": "pending"
+  },
+  {
+    "id": "INST-TEST-DUP",
+    "university_id": "UNI-TEST-1",
+    "name": "TEST FIXTURE Duplicate Email Institute",
+    "email": "institute.one@example.test",
+    "address": "Duplicate address",
+    "district": "Pune",
+    "taluka": "Haveli",
+    "jd_region": "Pune",
+    "mobile": "9876543212",
+    "principal_name": "Dup Principal",
+    "college_type": "Aided",
+    "status": "active"
+  }
+]
