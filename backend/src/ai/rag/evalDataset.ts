@@ -18,6 +18,14 @@ export const RAG_EVAL_CASES = [
     mustNotInvent: ['coverage amount']
   },
   {
+    id: 'gpa-personal-accident',
+    question: 'GPA policy details',
+    expectedDocumentTitle: 'Personal Accident / GPA (published page)',
+    expectedSectionHint: 'Personal Accident',
+    expectedAnswerIncludes: ['Accidental Death Benefit'],
+    mustNotInvent: ['premium amount']
+  },
+  {
     id: 'unverified-premium',
     question: 'What is the exact insurance premium amount for every student in 2024?',
     expectedDocumentTitle: null,

@@ -91,15 +91,14 @@ function composeExtractive(input: ProviderChatInput): ProviderChatOutput {
     };
   }
 
-  const excerpt = texts[0]!.slice(0, 900);
-  const extra = texts.length > 1 ? `\n\nRelated published text:\n${texts[1]!.slice(0, 400)}` : '';
+  const excerpt = texts.join('\n\n').slice(0, 1600);
   const langNote =
     input.language !== 'en'
       ? '\n\nOfficial source text is shown as published. Titles were not retranslated.'
       : '';
   const quality: SourceQuality = texts.length >= 2 || input.retrieved[0]!.score > 0.25 ? 'VERIFIED_FROM_KNOWLEDGE_BASE' : 'PARTIALLY_SUPPORTED';
   return {
-    answer: `${excerpt}${extra}${langNote}\n\nAI-generated assistance based on approved knowledge documents. This is not itself an official order.`,
+    answer: `${excerpt}${langNote}\n\nAI-generated assistance based on approved knowledge documents. This is not itself an official order.`,
     sourceQuality: quality,
     provider: env.AI_PROVIDER,
     model: 'extractive-rag',

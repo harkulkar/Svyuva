@@ -15,7 +15,7 @@ export function Contact() {
     >
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="border border-slate-300 bg-white p-6 lg:col-span-1">
-          <h2 className="text-lg font-semibold text-navy">Scheme portal</h2>
+          <h2 className="text-lg font-semibold text-navy">Nodel Agency</h2>
           <p className="mt-3 text-sm text-slate-700">{SITE.contact.note}</p>
           <p className="mt-4">
             <a href={SITE.contact.mailto} className="font-semibold text-navy underline">

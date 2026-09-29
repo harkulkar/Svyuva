@@ -11,8 +11,11 @@ import type { AccessScope } from '../ai.types.js';
 export async function ensureSeedKnowledge(): Promise<void> {
   for (const item of SEED_KNOWLEDGE) {
     const existing = await KnowledgeDocument.findOne({ seedKey: item.seedKey });
-    if (existing?.status === 'ACTIVE' && existing.embeddingStatus === 'COMPLETE') continue;
     const buffer = Buffer.from(item.text, 'utf8');
+    const checksum = checksumBuffer(buffer);
+    if (existing?.status === 'ACTIVE' && existing.embeddingStatus === 'COMPLETE' && existing.checksum === checksum) {
+      continue;
+    }
     let doc = existing;
     if (!doc) {
       doc = await KnowledgeDocument.create({
@@ -28,11 +31,16 @@ export async function ensureSeedKnowledge(): Promise<void> {
         originalFilename: `${item.seedKey}.txt`,
         mimeType: 'text/plain',
         sizeBytes: buffer.length,
-        checksum: checksumBuffer(buffer)
+        checksum
       });
     }
     const fileReference = await saveKnowledgeFile(String(doc._id), `${item.seedKey}.txt`, buffer);
     doc.fileReference = fileReference;
+    doc.checksum = checksum;
+    doc.sizeBytes = buffer.length;
+    doc.title = item.title;
+    doc.source = item.source;
+    doc.sourceUrl = item.sourceUrl;
     doc.status = 'PROCESSING';
     await doc.save();
     await processKnowledgeDocument(String(doc._id));

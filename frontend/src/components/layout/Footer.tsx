@@ -58,7 +58,7 @@ export function Footer() {
       <div className="border-t border-white/15">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-4 text-xs sm:flex-row sm:items-center sm:justify-between">
           <p>
-            © {year} {SITE.shortName}. All Rights Reserved.
+            © {year}. Copyright All Rights Reserved.
           </p>
           <p>
             <Link to="/disclaimer" className="hover:text-white hover:underline">

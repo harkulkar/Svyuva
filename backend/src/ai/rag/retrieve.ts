@@ -1,7 +1,7 @@
 import { KnowledgeChunk } from '../../models/KnowledgeChunk.js';
 import { KnowledgeDocument } from '../../models/KnowledgeDocument.js';
 import type { AccessScope, AiCitation } from '../ai.types.js';
-import { cosineSimilarity, distinctiveTokens, embedText, tokenize } from './embed.js';
+import { cosineSimilarity, distinctiveTokens, embedText, expandQuestion, tokenOverlap } from './embed.js';
 
 export type RetrievalHit = {
   text: string;
@@ -34,16 +34,15 @@ export async function retrieveChunks(question: string, scope: RetrievalScope, li
     delete filter.accessScope;
   }
   const rows = await KnowledgeChunk.find(filter).limit(400).lean();
-  const query = embedText(question);
-  const needed = distinctiveTokens(question);
+  const expanded = expandQuestion(question);
+  const query = embedText(expanded);
+  const needed = distinctiveTokens(expanded);
   const scored = rows
     .map((row) => ({
       text: row.text,
       score: cosineSimilarity(query, row.embedding || []),
       accessScope: row.accessScope as AccessScope,
-      lexical: needed.length
-        ? needed.filter((token) => tokenize(`${row.title}\n${row.text}`).includes(token)).length
-        : 1,
+      lexical: needed.length ? tokenOverlap(needed, `${row.title}\n${row.text}`) : 1,
       citation: {
         knowledgeDocumentId: String(row.knowledgeDocumentId),
         title: row.title,
@@ -55,11 +54,11 @@ export async function retrieveChunks(question: string, scope: RetrievalScope, li
       }
     }))
     .filter((row) => {
-      if (row.score <= 0.12) return false;
+      if (row.score <= 0.08) return false;
       if (!needed.length) return false;
-      return row.lexical >= 1 && row.lexical / needed.length >= 0.45;
+      return row.lexical >= 1 && row.lexical / needed.length >= 0.5;
     })
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => b.lexical - a.lexical || b.score - a.score)
     .slice(0, limit);
 
   const activeIds = new Set(

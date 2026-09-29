@@ -34,7 +34,7 @@ export function Home() {
           </div>
         </section>
 
-        <section className="bg-navy py-10 text-white">
+        <section className="bg-orange-500 py-10 text-white">
           <div className="mx-auto max-w-6xl px-4">
             <SectionTitle title="Words of Swami Vivekananda" />
             <ul className="grid gap-4 sm:grid-cols-2">

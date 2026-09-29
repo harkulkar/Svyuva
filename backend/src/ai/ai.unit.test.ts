@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { chunkText } from './rag/chunk.js';
-import { cosineSimilarity, detectLanguage, distinctiveTokens, embedText } from './rag/embed.js';
+import { cosineSimilarity, detectLanguage, distinctiveTokens, embedText, expandQuestion, tokenOverlap } from './rag/embed.js';
 import { classifyDocument } from './document/classify.js';
 import { extractVisibleFields } from './document/extract.js';
 import { reviewExcelWithAi } from './validation/excelAi.js';
@@ -28,6 +28,14 @@ test('embeddings are comparable with cosine similarity', () => {
 test('distinctive tokens keep nodal agency keywords', () => {
   assert.equal(distinctiveTokens('Who is the nodal agency?').includes('nodal'), true);
   assert.equal(distinctiveTokens('Who is the nodal agency?').includes('who'), false);
+});
+
+test('GPA and typed policy questions keep useful tokens', () => {
+  const tokens = distinctiveTokens(expandQuestion('GPA poliucy detasils'));
+  assert.equal(tokens.includes('gpa'), true);
+  assert.equal(tokens.includes('personal'), true);
+  assert.equal(tokens.includes('accident'), true);
+  assert.ok(tokenOverlap(['poliucy', 'detasils'], 'Personal Accident policy details') >= 2);
 });
 
 test('language detection for Hindi and Marathi', () => {

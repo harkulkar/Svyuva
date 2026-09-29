@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Seo } from '../../components/common/Seo';
 import { EmptyState, SimpleBars } from '../../components/common/AdminUi';
+import { OverviewTotals } from '../../components/common/OverviewTotals';
 import { StatCard } from '../../components/common/StatCard';
 import { QuickActions } from '../../components/common/QuickActions';
 import { PageError, SkeletonGrid } from '../../components/common/PageState';
@@ -79,6 +80,7 @@ export function AdminDashboardPage() {
       {!data && !error ? <SkeletonGrid label="Loading dashboard…" /> : null}
       {data ? (
         <>
+          <OverviewTotals universities={data.universities} institutes={data.institutes} students={data.students} />
           {data.notifications.pendingRegistrations > 0 ? (
             <p className="mt-4 border border-saffron bg-white px-4 py-3 text-sm" role="status">
               {data.notifications.pendingRegistrations} pending college registration{data.notifications.pendingRegistrations === 1 ? '' : 's'}.{' '}
@@ -130,7 +132,6 @@ export function AdminDashboardPage() {
             <StatCard title="Rejected submissions" value={data.submissions?.byStatus.REJECTED ?? 0} to="/admin/submissions" />
             <StatCard title="Students in submitted packs" value={data.submissions?.totalStudentsSubmitted ?? 0} to="/admin/submissions" />
             <StatCard title="Calculated premium (submitted)" value={data.submissions?.totalCalculatedPremium ?? 0} to="/admin/submissions" />
-            <StatCard title="Total students" value={data.students} to="/admin/students" />
             <StatCard title="Pending institutes" value={data.pendingInstitutes} to="/admin/institutes" />
             <StatCard title="Insurance records" value={analytics?.insurance?.total ?? '—'} to="/admin/insurance" />
             <StatCard title="Missing documents" value={analytics?.documents?.missing ?? '—'} />
@@ -151,15 +152,12 @@ export function AdminDashboardPage() {
             </section>
           ) : null}
           <div className="mt-6 hidden gap-4 md:grid sm:grid-cols-2 lg:grid-cols-4">
-            <Card title="Total universities" value={data.universities} />
             <Card title="Active universities" value={data.activeUniversities ?? '—'} />
             <Card title="Inactive universities" value={data.inactiveUniversities ?? '—'} />
-            <Card title="Total institutes" value={data.institutes} />
             <Card title="Active institutes" value={data.activeInstitutes} />
             <Card title="Pending institutes" value={data.pendingInstitutes} />
             <Card title="Rejected institutes" value={data.rejectedInstitutes} />
             <Card title="Inactive institutes" value={data.inactiveInstitutes ?? '—'} />
-            <Card title="Total students" value={data.students} />
             <Card title="Active students" value={data.activeStudents} />
             <Card title="Inactive students" value={data.inactiveStudents} />
             <Card title="Insurance records" value={analytics?.insurance?.total ?? '—'} />

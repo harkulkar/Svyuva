@@ -21,7 +21,7 @@ export function Hero() {
 
   return (
     <section
-      className="relative overflow-hidden bg-navy-dark"
+      className="relative overflow-hidden"
       aria-roledescription="carousel"
       aria-label="Scheme banners"
       onMouseEnter={() => setPaused(true)}
@@ -37,11 +37,10 @@ export function Hero() {
             loading={i === 0 ? 'eager' : 'lazy'}
           />
         ))}
-        <div className="absolute inset-0 bg-navy-dark/55" />
         <div className="relative z-10 mx-auto flex min-h-[280px] max-w-6xl flex-col justify-end px-4 py-10 sm:min-h-[380px] lg:min-h-[460px]">
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-saffron">Government of Maharashtra</p>
-          <h1 className="mt-2 max-w-3xl text-2xl font-semibold text-white sm:text-4xl">Swami Vivekananda Yuva Suraksha Yojana</h1>
-          <p id={`${id}-quote`} className="mt-4 max-w-2xl text-sm italic text-blue-50 sm:text-lg" aria-live="polite">
+          <h1 className="mt-2 max-w-3xl text-2xl font-semibold text-navy sm:text-4xl">Swami Vivekananda Yuva Suraksha Yojana</h1>
+          <p id={`${id}-quote`} className="mt-4 max-w-2xl text-sm italic text-navy-dark sm:text-lg" aria-live="polite">
             {slide.quote}
           </p>
         </div>

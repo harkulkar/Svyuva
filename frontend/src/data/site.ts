@@ -1,5 +1,5 @@
 export const SITE = {
-  shortName: 'SV Yuva Suraksha Yojana',
+  shortName: 'Swami Vivekananda Yuva Suraksha Yojana',
   fullName: 'Swami Vivekananda Yuva Suraksha Yojana',
   departmentLine: 'Directorate of Higher Education, Government of Maharashtra',
   parentDepartment: 'Higher and Technical Education Department, Government of Maharashtra',
