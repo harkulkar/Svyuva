@@ -15,8 +15,11 @@ import {
   collegeStudentMeta,
   collegeStudentTemplate,
   collegeStudents,
+  collegeStudentPremiumOptions,
   importCollegeStudents,
   patchCollegeStudent,
+  proceedCollegeStudentPayment,
+  quoteCollegeStudentPremium,
   patchCollegeStudentStatus,
   postCollegeStudent,
   uploadCollegeStudents
@@ -30,6 +33,7 @@ import { collegeProfileUpdateSchema } from '../validators/authValidators.js';
 import {
   importJobSchema,
   studentCreateSchema,
+  studentPremiumQuoteSchema,
   studentListQuerySchema,
   studentStatusSchema,
   studentUpdateSchema
@@ -104,6 +108,9 @@ collegeRouter.get('/reports/export', exportLimiter, validateQuery(reportQuerySch
 collegeRouter.get('/students/meta', collegeStudentMeta);
 collegeRouter.get('/students/template', collegeStudentTemplate);
 collegeRouter.post('/students/upload', uploadLimiter, excelTimeout, studentExcelUpload, uploadCollegeStudents);
+collegeRouter.get('/students/premium-options', collegeStudentPremiumOptions);
+collegeRouter.post('/students/premium-quote', validateBody(studentPremiumQuoteSchema), quoteCollegeStudentPremium);
+collegeRouter.post('/students/payment/proceed', validateBody(studentPremiumQuoteSchema), proceedCollegeStudentPayment);
 collegeRouter.post('/students/import', uploadLimiter, validateBody(importJobSchema), importCollegeStudents);
 collegeRouter.get('/students/import/:jobId/errors', collegeStudentImportErrors);
 collegeRouter.get('/students', validateQuery(studentListQuerySchema), collegeStudents);

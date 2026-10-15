@@ -13,6 +13,11 @@ const uploadJobSchema = new Schema(
     validRows: { type: [Schema.Types.Mixed], default: [] },
     issues: { type: [Schema.Types.Mixed], default: [] },
     imported: { type: Boolean, default: false },
+    insurer: { type: String, trim: true, default: null },
+    policyType: { type: String, trim: true, default: null },
+    premiumQuote: { type: Schema.Types.Mixed, default: null },
+    paymentStatus: { type: String, trim: true, default: 'NONE' },
+    paymentRequestedAt: { type: Date, default: null },
     expiresAt: { type: Date, required: true }
   },
   { timestamps: { createdAt: true, updatedAt: false }, collection: 'uploads' }

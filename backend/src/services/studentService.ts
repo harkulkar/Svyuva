@@ -24,6 +24,7 @@ import {
 import { safeUploadFilename } from '../utils/spreadsheet.js';
 import type { AuthUser } from '../types/auth.js';
 import type { AdminStudentListQuery, StudentListQuery, StudentUpdateInput, StudentWriteInput } from '../validators/studentValidators.js';
+import { computeInsurerPremium, insurerPremiumOptions } from '../data/insurerPremiumCatalog.js';
 
 const LIST_FIELDS =
   'studentId enrollmentNumber rollNumber firstName middleName lastName gender course stream year semester academicYear mobile email status instituteId universityId createdAt updatedAt';
@@ -650,6 +651,98 @@ export async function importCollegeExcel(user: AuthUser, jobId: string, req: Req
     failed,
     duplicates: job.duplicateCount,
     invalid: job.invalidCount
+  };
+}
+
+async function loadCollegeUploadJob(user: AuthUser, jobId: string) {
+  const { instituteId } = await collegeOwnership(user);
+  if (!mongoose.isValidObjectId(jobId)) {
+    throw new AppError('Upload preview not found', 404, 'NOT_FOUND');
+  }
+  const job = await UploadJob.findOne({ _id: jobId, instituteId });
+  if (!job) {
+    throw new AppError('Upload preview not found', 404, 'NOT_FOUND');
+  }
+  if (job.expiresAt.getTime() < Date.now()) {
+    throw new AppError('The upload preview has expired. Upload the file again.', 410, 'PREVIEW_EXPIRED');
+  }
+  return job;
+}
+
+export function collegePremiumOptions() {
+  return insurerPremiumOptions();
+}
+
+export async function quoteCollegeUploadPremium(
+  user: AuthUser,
+  input: { jobId: string; insurer: string; policyType: string },
+  req?: Request
+) {
+  const job = await loadCollegeUploadJob(user, input.jobId);
+  if (job.validCount < 1) {
+    throw new AppError('Validate the Excel file and keep at least one valid student before selecting a policy.', 400, 'NO_VALID_ROWS');
+  }
+  const quote = computeInsurerPremium({
+    insurer: input.insurer,
+    policyType: input.policyType,
+    studentCount: job.validCount
+  });
+  if (!quote) {
+    throw new AppError('That insurer and policy combination is not available.', 400, 'INVALID_POLICY');
+  }
+  job.insurer = quote.insurer;
+  job.policyType = quote.policyType;
+  job.premiumQuote = quote;
+  if (job.paymentStatus === 'NONE' || !job.paymentStatus) {
+    job.paymentStatus = 'QUOTED';
+  }
+  await job.save();
+  if (req) {
+    await writeAudit({
+      userId: user.id,
+      action: 'STUDENT_UPLOAD_PREMIUM_QUOTED',
+      entity: 'UploadJob',
+      entityId: String(job._id),
+      req,
+      metadata: {
+        insurer: quote.insurer,
+        policyType: quote.policyType,
+        studentCount: quote.studentCount,
+        totalPremium: quote.totalPremium
+      }
+    });
+  }
+  return { quote, paymentStatus: job.paymentStatus };
+}
+
+export async function requestCollegeUploadPayment(
+  user: AuthUser,
+  input: { jobId: string; insurer: string; policyType: string },
+  req?: Request
+) {
+  const quoted = await quoteCollegeUploadPremium(user, input, req);
+  const job = await loadCollegeUploadJob(user, input.jobId);
+  job.paymentStatus = 'AWAITING_PAYMENT_DETAILS';
+  job.paymentRequestedAt = new Date();
+  await job.save();
+  if (req) {
+    await writeAudit({
+      userId: user.id,
+      action: 'STUDENT_UPLOAD_PAYMENT_REQUESTED',
+      entity: 'UploadJob',
+      entityId: String(job._id),
+      req,
+      metadata: {
+        insurer: quoted.quote.insurer,
+        policyType: quoted.quote.policyType,
+        totalPremium: quoted.quote.totalPremium
+      }
+    });
+  }
+  return {
+    quote: quoted.quote,
+    paymentStatus: job.paymentStatus,
+    message: 'Premium calculated. Payment details will be collected in the next step.'
   };
 }
 

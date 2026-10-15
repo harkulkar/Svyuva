@@ -107,6 +107,24 @@ export type ExcelPreview = {
   expiresAt: string;
 };
 
+export type InsurerCode = 'NATIONAL' | 'ICICI';
+export type PolicyType = 'GPA' | 'GMC';
+
+export type InsurerPremiumQuote = {
+  insurer: InsurerCode | string;
+  insurerName: string;
+  policyType: PolicyType | string;
+  policyLabel: string;
+  studentCount: number;
+  ratePerStudent: number;
+  gstRate: number;
+  basePremium: number;
+  gstAmount: number;
+  totalPremium: number;
+  currency: string;
+  formula: string;
+};
+
 export type ImportResult = {
   jobId: string;
   filename: string;

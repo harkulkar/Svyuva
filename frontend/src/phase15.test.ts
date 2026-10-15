@@ -9,9 +9,10 @@ describe('Phase 15 workflow UI', () => {
 });
 
 describe('Phase 15 college submission UI', () => {
-  it('includes college and admin submission routes in navigation', () => {
-    expect(COLLEGE_LINKS.some((item) => item.to === '/college/submissions')).toBe(true);
-    expect(COLLEGE_BOTTOM_NAV.some((item) => item.to === '/college/submissions')).toBe(true);
+  it('keeps college student navigation and admin submission routes', () => {
+    expect(COLLEGE_LINKS.some((item) => item.to === '/college/submissions')).toBe(false);
+    expect(COLLEGE_LINKS.some((item) => item.label === 'Students')).toBe(true);
+    expect(COLLEGE_BOTTOM_NAV.some((item) => item.to === '/college/students')).toBe(true);
     expect(ADMIN_LINKS.some((item) => item.to === '/admin/submissions')).toBe(true);
     expect(ADMIN_BOTTOM_NAV.some((item) => item.to === '/admin/submissions')).toBe(true);
   });

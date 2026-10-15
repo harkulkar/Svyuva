@@ -3,6 +3,7 @@ import test from 'node:test';
 import { allowedActionsFor, findRule, actionBlockedByFlag } from './workflow/definitions.js';
 import { isWriteRequest, selectTools } from './ai/tools/registry.js';
 import { computePremiumAmount } from './services/premiumCalculationService.js';
+import { computeInsurerPremium } from './data/insurerPremiumCatalog.js';
 import { parseStudentWorkbook, buildStudentTemplate } from './services/excelService.js';
 import { EXCEL_COLUMNS } from './data/studentMaster.js';
 import * as XLSX from 'xlsx';
@@ -39,6 +40,24 @@ test('AI workflow tools are read-only and selected from questions', () => {
   assert.ok(selectTools('What are the main pending items today?', 'ADMIN').includes('getWorkflowQueueSummary'));
   assert.ok(selectTools('What do I need to do?', 'COLLEGE').includes('getMyActionCenter'));
   assert.equal(selectTools('What are the main pending items today?', 'COLLEGE').includes('getWorkflowQueueSummary'), false);
+});
+
+test('insurer policy premium applies 18% GST per student rate', () => {
+  const national = computeInsurerPremium({ insurer: 'NATIONAL', policyType: 'GPA', studentCount: 10 });
+  assert.equal(national?.ratePerStudent, 62);
+  assert.equal(national?.basePremium, 620);
+  assert.equal(national?.gstAmount, 111.6);
+  assert.equal(national?.totalPremium, 731.6);
+  const iciciGpa = computeInsurerPremium({ insurer: 'ICICI', policyType: 'GPA', studentCount: 2 });
+  assert.equal(iciciGpa?.ratePerStudent, 20);
+  assert.equal(iciciGpa?.basePremium, 40);
+  assert.equal(iciciGpa?.gstAmount, 7.2);
+  assert.equal(iciciGpa?.totalPremium, 47.2);
+  const iciciGmc = computeInsurerPremium({ insurer: 'ICICI', policyType: 'GMC', studentCount: 1 });
+  assert.equal(iciciGmc?.ratePerStudent, 422);
+  assert.equal(iciciGmc?.gstAmount, 75.96);
+  assert.equal(iciciGmc?.totalPremium, 497.96);
+  assert.equal(computeInsurerPremium({ insurer: 'NATIONAL', policyType: 'GMC', studentCount: 1 }), null);
 });
 
 test('premium engine does not invent a rate', () => {

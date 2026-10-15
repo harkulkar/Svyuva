@@ -5,8 +5,11 @@ import {
   collegeImportErrorFile,
   createCollegeStudent,
   getCollegeStudent,
+  collegePremiumOptions,
   importCollegeExcel,
   listCollegeStudents,
+  quoteCollegeUploadPremium,
+  requestCollegeUploadPayment,
   previewCollegeExcel,
   studentTemplateFile,
   updateCollegeStudent,
@@ -100,6 +103,30 @@ export async function importCollegeStudents(req: Request, res: Response, next: N
     const user = requireCollege(req);
     const result = await importCollegeExcel(user, String(req.body.jobId), req);
     res.json(ok(result, 'Import successful'));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export function collegeStudentPremiumOptions(_req: Request, res: Response): void {
+  res.json(ok(collegePremiumOptions(), 'OK'));
+}
+
+export async function quoteCollegeStudentPremium(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const user = requireCollege(req);
+    const result = await quoteCollegeUploadPremium(user, req.body, req);
+    res.json(ok(result, 'Premium calculated'));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function proceedCollegeStudentPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const user = requireCollege(req);
+    const result = await requestCollegeUploadPayment(user, req.body, req);
+    res.json(ok(result, result.message));
   } catch (error) {
     next(error);
   }

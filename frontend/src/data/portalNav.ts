@@ -11,8 +11,6 @@ export type BottomNavItem = { to: string; label: string; end?: boolean };
 
 export const COLLEGE_LINKS: PortalNavItem[] = [
   { to: '/college', label: 'Dashboard', end: true },
-  { to: '/college/submissions', label: 'Submissions' },
-  { to: '/college/notifications', label: 'Notifications' },
   { to: '/college/profile', label: 'My Profile' },
   {
     label: 'Students',
@@ -22,12 +20,8 @@ export const COLLEGE_LINKS: PortalNavItem[] = [
       { to: '/college/students/upload', label: 'Upload Students' }
     ]
   },
-  { to: '/college/reports', label: 'Reports' },
-  { to: '/college/insurance', label: 'Insurance' },
   { to: '/college/documents', label: 'Documents' },
-  { to: '/college/ecard', label: 'E-Card' },
   { to: '/college/payment-status', label: 'Payment Status' },
-  { to: '/college/review', label: 'Review' },
   { to: '/college/ai-assistant', label: 'AI assistant' }
 ];
 
@@ -65,11 +59,8 @@ export const ADMIN_LINKS: PortalNavItem[] = [
 
 export const COLLEGE_BOTTOM_NAV: BottomNavItem[] = [
   { to: '/college', label: 'Home', end: true },
-  { to: '/college/submissions', label: 'Submit' },
   { to: '/college/students', label: 'Students' },
-  { to: '/college/insurance', label: 'Insurance' },
   { to: '/college/documents', label: 'Documents' },
-  { to: '/college/notifications', label: 'Alerts' },
   { to: '/college/profile', label: 'Profile' }
 ];
 

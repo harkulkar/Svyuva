@@ -305,6 +305,68 @@ test('college student isolation and excel import', async (t) => {
     assert.equal(stolen.status, 404);
   });
 
+  await t.test('after validate college quotes insurer premium then proceeds to payment', async () => {
+    const buffer = workbookBuffer([
+      validExcelRow({
+        'Student ID No': `XL-${stamp}-P1`,
+        'Sr No': `XR-${stamp}-P1`,
+        "Student's Mail Id": `ravip1.${stamp}@example.com`,
+        "Student's Mobile No": '9876502222'
+      }),
+      validExcelRow({
+        'Student ID No': `XL-${stamp}-P2`,
+        'Sr No': `XR-${stamp}-P2`,
+        "Student's Mail Id": `ravip2.${stamp}@example.com`,
+        "Student's Mobile No": '9876503333'
+      })
+    ]);
+    const preview = await collegeA.post('/api/college/students/upload').attach('file', buffer, 'students.xlsx');
+    assert.equal(preview.status, 200);
+    assert.equal(preview.body.data.valid, 2);
+    const jobId = preview.body.data.jobId as string;
+
+    const blocked = await collegeA.post('/api/college/students/premium-quote').send({
+      jobId,
+      insurer: 'NATIONAL',
+      policyType: 'GMC'
+    });
+    assert.equal(blocked.status, 400);
+
+    const quoted = await collegeA.post('/api/college/students/premium-quote').send({
+      jobId,
+      insurer: 'ICICI',
+      policyType: 'GPA'
+    });
+    assert.equal(quoted.status, 200);
+    assert.equal(quoted.body.data.quote.studentCount, 2);
+    assert.equal(quoted.body.data.quote.ratePerStudent, 20);
+    assert.equal(quoted.body.data.quote.totalPremium, 47.2);
+
+    const national = await collegeA.post('/api/college/students/premium-quote').send({
+      jobId,
+      insurer: 'NATIONAL',
+      policyType: 'GPA'
+    });
+    assert.equal(national.status, 200);
+    assert.equal(national.body.data.quote.totalPremium, 146.32);
+
+    const stolen = await collegeB.post('/api/college/students/premium-quote').send({
+      jobId,
+      insurer: 'NATIONAL',
+      policyType: 'GPA'
+    });
+    assert.equal(stolen.status, 404);
+
+    const pay = await collegeA.post('/api/college/students/payment/proceed').send({
+      jobId,
+      insurer: 'NATIONAL',
+      policyType: 'GPA'
+    });
+    assert.equal(pay.status, 200);
+    assert.equal(pay.body.data.paymentStatus, 'AWAITING_PAYMENT_DETAILS');
+    assert.match(String(pay.body.data.message), /next step/i);
+  });
+
   await t.test('student can be viewed edited and deactivated', async () => {
     const viewed = await collegeA.get(`/api/college/students/${studentAId}`);
     assert.equal(viewed.status, 200);

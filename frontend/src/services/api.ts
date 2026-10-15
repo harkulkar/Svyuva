@@ -16,7 +16,7 @@ import type {
   SystemHealth,
   UniversityOption
 } from '../types/auth';
-import type { ExcelPreview, ImportResult, Pagination, StudentDetail, StudentList, StudentMeta } from '../types/student';
+import type { ExcelPreview, ImportResult, InsurerPremiumQuote, Pagination, StudentDetail, StudentList, StudentMeta } from '../types/student';
 import type { AiAnalytics, AiChatResponse, AiLanguage, AiStatus, KnowledgeListItem } from '../types/ai';
 
 export const api = axios.create({
@@ -258,6 +258,32 @@ export async function uploadStudentExcel(file: File, signal?: AbortSignal): Prom
       }
     ]
   });
+  if (!response.data.success) throw new Error(response.data.message);
+  return response.data.data;
+}
+
+export async function quoteStudentUploadPremium(input: {
+  jobId: string;
+  insurer: 'NATIONAL' | 'ICICI';
+  policyType: 'GPA' | 'GMC';
+}): Promise<{ quote: InsurerPremiumQuote; paymentStatus: string }> {
+  const response = await api.post<ApiResponse<{ quote: InsurerPremiumQuote; paymentStatus: string }>>(
+    '/api/college/students/premium-quote',
+    input
+  );
+  if (!response.data.success) throw new Error(response.data.message);
+  return response.data.data;
+}
+
+export async function proceedStudentUploadPayment(input: {
+  jobId: string;
+  insurer: 'NATIONAL' | 'ICICI';
+  policyType: 'GPA' | 'GMC';
+}): Promise<{ quote: InsurerPremiumQuote; paymentStatus: string; message: string }> {
+  const response = await api.post<ApiResponse<{ quote: InsurerPremiumQuote; paymentStatus: string; message: string }>>(
+    '/api/college/students/payment/proceed',
+    input
+  );
   if (!response.data.success) throw new Error(response.data.message);
   return response.data.data;
 }

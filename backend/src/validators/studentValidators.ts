@@ -150,6 +150,14 @@ export const importJobSchema = z
   })
   .strict();
 
+export const studentPremiumQuoteSchema = z
+  .object({
+    jobId: objectId,
+    insurer: z.enum(['NATIONAL', 'ICICI']),
+    policyType: z.enum(['GPA', 'GMC'])
+  })
+  .strict();
+
 export type StudentWriteInput = z.infer<typeof studentWriteSchema>;
 export type StudentUpdateInput = z.infer<typeof studentUpdateSchema>;
 export type StudentListQuery = z.infer<typeof studentListQuerySchema>;

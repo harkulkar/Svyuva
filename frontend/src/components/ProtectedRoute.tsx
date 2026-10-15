@@ -22,6 +22,8 @@ export function ProtectedRoute({ children, roles }: { children: ReactNode; roles
   }
 
   if (roles && !roles.includes(user.role)) {
+    if (user.role === 'ADMIN') return <Navigate to="/admin" replace />;
+    if (user.role === 'COLLEGE') return <Navigate to="/college" replace />;
     return <Navigate to="/forbidden" replace />;
   }
 

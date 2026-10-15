@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 import { Seo } from '../../components/common/Seo';
 import { StatCard } from '../../components/common/StatCard';
 import { QuickActions } from '../../components/common/QuickActions';
@@ -8,10 +9,13 @@ import { PageError, SkeletonGrid } from '../../components/common/PageState';
 import { fetchCollegeDashboard, fetchCollegeInsights, fetchUnreadNotifications, getApiErrorMessage } from '../../services/api';
 import { COLLEGE_QUICK_ACTIONS } from '../../data/portalNav';
 import { ActionCenter } from '../../components/common/ActionCenter';
+import { useAuth } from '../../context/AuthContext';
+import type { ApiFailure } from '../../types/api';
 import type { CollegeDashboard } from '../../types/auth';
 import type { NotificationItem } from '../../types/notifications';
 
 export function CollegeDashboardPage() {
+  const { refreshUser } = useAuth();
   const [data, setData] = useState<CollegeDashboard | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [insights, setInsights] = useState<{ attention: string[]; aiUsed: boolean } | null>(null);
@@ -21,7 +25,13 @@ export function CollegeDashboardPage() {
     setError(null);
     void fetchCollegeDashboard()
       .then(setData)
-      .catch((err) => setError(getApiErrorMessage(err, 'We couldn\'t load the dashboard. Please try again.')));
+      .catch(async (err) => {
+        const code = axios.isAxiosError(err) ? (err.response?.data as ApiFailure | undefined)?.code : undefined;
+        if (code === 'FORBIDDEN') {
+          await refreshUser();
+        }
+        setError(getApiErrorMessage(err, 'We couldn\'t load the dashboard. Please try again.'));
+      });
     void fetchCollegeInsights().then(setInsights).catch(() => undefined);
     void fetchUnreadNotifications()
       .then((result) => setRecent(result.recent.slice(0, 5)))

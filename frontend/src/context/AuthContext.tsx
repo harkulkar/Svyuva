@@ -30,6 +30,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void refreshUser().finally(() => setIsLoading(false));
   }, [refreshUser]);
 
+  useEffect(() => {
+    function onFocus() {
+      void refreshUser();
+    }
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+    };
+  }, [refreshUser]);
+
   const login = useCallback(async (email: string, password: string, rememberMe = false) => {
     const result = await loginRequest(email, password, rememberMe);
     setUser(result.user);

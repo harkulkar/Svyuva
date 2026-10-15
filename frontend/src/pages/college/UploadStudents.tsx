@@ -12,6 +12,7 @@ import {
   importStudentExcel,
   uploadStudentExcel
 } from '../../services/api';
+import { InsurerPremiumStep } from '../../components/college/InsurerPremiumStep';
 import type { ExcelPreview, ImportResult } from '../../types/student';
 
 export function CollegeUploadStudentsPage() {
@@ -186,6 +187,7 @@ export function CollegeUploadStudentsPage() {
               </ul>
             </section>
           ) : null}
+          {preview.valid > 0 ? <InsurerPremiumStep key={preview.jobId} jobId={preview.jobId} studentCount={preview.valid} /> : null}
           <div className="mt-4 flex flex-wrap gap-2">
             <button type="button" className="inline-flex items-center gap-2 bg-navy px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" onClick={() => void onImport()} disabled={busy !== null || preview.valid === 0}>
               {busy === 'import' ? <ButtonSpinner /> : null}
