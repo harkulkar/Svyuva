@@ -22,6 +22,12 @@ jobs:
         run: npm run lint
       - name: Unit tests
         run: npm run test:unit
+        env:
+          # Placeholders only: the unit tests load the env schema but never connect to a database.
+          NODE_ENV: test
+          MONGODB_URI: mongodb://127.0.0.1:27017/ci-placeholder
+          JWT_ACCESS_SECRET: ci-placeholder-access-secret-0123456789abcdef
+          JWT_REFRESH_SECRET: ci-placeholder-refresh-secret-0123456789abcdef
       - name: Production build
         run: npm run build
         env:
