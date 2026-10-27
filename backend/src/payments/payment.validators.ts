@@ -36,4 +36,5 @@ export const verifyPaymentSchema = z
     razorpay_payment_id: z.string().regex(/^pay_[A-Za-z0-9]+$/, 'Invalid payment'),
     razorpay_signature: z.string().regex(/^[a-fA-F0-9]{64}$/, 'Invalid signature')
   })
-  .strict();
+  // Checkout may add extra keys to its success payload; unknown keys are dropped, not rejected.
+  .strip();

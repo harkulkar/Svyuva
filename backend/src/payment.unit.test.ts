@@ -63,6 +63,14 @@ test('gateway validators accept real-looking input and reject bad input', () => 
     verifyPaymentSchema.safeParse({ razorpay_order_id: 'order_Abc1', razorpay_payment_id: 'pay_Abc1', razorpay_signature: 'a'.repeat(64) }).success,
     true
   );
+  const extra = verifyPaymentSchema.safeParse({
+    razorpay_order_id: 'order_Abc1',
+    razorpay_payment_id: 'pay_Abc1',
+    razorpay_signature: 'a'.repeat(64),
+    something_new: 'x'
+  });
+  assert.equal(extra.success, true, 'extra checkout keys are ignored');
+  assert.deepEqual(Object.keys(extra.success ? extra.data : {}).sort(), ['razorpay_order_id', 'razorpay_payment_id', 'razorpay_signature']);
   assert.equal(
     verifyPaymentSchema.safeParse({ razorpay_order_id: 'x', razorpay_payment_id: 'pay_Abc1', razorpay_signature: 'a'.repeat(64) }).success,
     false

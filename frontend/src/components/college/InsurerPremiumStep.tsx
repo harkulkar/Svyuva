@@ -51,6 +51,7 @@ export function InsurerPremiumStep({
   const [busy, setBusy] = useState<'quote' | 'pay' | null>(null);
   const [availability, setAvailability] = useState<PaymentAvailability | null>(null);
   const [paid, setPaid] = useState(false);
+  const [pendingPaymentId, setPendingPaymentId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,13 +100,39 @@ export function InsurerPremiumStep({
     };
   }, [jobId, insurer, policyType]);
 
-  async function confirmPayment(first: PaymentRecord): Promise<PaymentRecord> {
+  async function confirmPayment(paymentRecordId: string, first: PaymentRecord | null): Promise<PaymentRecord | null> {
     let current = first;
-    for (let attempt = 0; attempt < CONFIRM_ATTEMPTS && current.status !== 'VERIFIED'; attempt += 1) {
+    for (let attempt = 0; attempt < CONFIRM_ATTEMPTS && current?.status !== 'VERIFIED'; attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, CONFIRM_DELAY_MS));
-      current = await fetchPayment(first.id);
+      try {
+        current = await fetchPayment(paymentRecordId);
+      } catch {
+        /* keep trying; the final state is reported below */
+      }
     }
     return current;
+  }
+
+  function markPaid() {
+    setPaid(true);
+    setPendingPaymentId(null);
+    setError(null);
+    setPaymentMessage('Payment received. You can now import the valid students.');
+  }
+
+  async function onCheckStatus() {
+    if (!pendingPaymentId) return;
+    setBusy('pay');
+    setError(null);
+    try {
+      const payment = await fetchPayment(pendingPaymentId);
+      if (payment.status === 'VERIFIED') markPaid();
+      else setPaymentMessage('Your payment is still being confirmed. Please check again in a minute.');
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Could not check the payment status.'));
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function onPayOnline() {
@@ -114,27 +141,32 @@ export function InsurerPremiumStep({
     setPaymentMessage(null);
     try {
       const order = await createPaymentOrder(jobId);
+      const paymentRecordId = order.payment.id;
       const result = await openRazorpayCheckout(order.checkout, (reason) => setError(reason));
       if (result.status === 'dismissed') {
-        setPaymentMessage('The payment window was closed. No payment was taken. You can try again.');
+        setPaymentMessage('The payment window was closed. If money was deducted, use "Check payment status" below instead of paying again.');
+        setPendingPaymentId(paymentRecordId);
         return;
       }
       setError(null);
-      let payment: PaymentRecord;
+      setPendingPaymentId(paymentRecordId);
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = result.response;
+      let payment: PaymentRecord | null = null;
+      let verifyError: unknown = null;
       try {
-        payment = await verifyPayment(result.response);
+        payment = await verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_signature });
       } catch (err) {
-        setError(
-          `${getApiErrorMessage(err, 'We could not confirm your payment yet.')} If money was deducted, do not pay again — the status will update automatically.`
-        );
-        return;
+        verifyError = err;
       }
-      if (payment.status !== 'VERIFIED') payment = await confirmPayment(payment);
-      if (payment.status === 'VERIFIED') {
-        setPaid(true);
-        setPaymentMessage('Payment received. You can now import the valid students.');
+      if (payment?.status !== 'VERIFIED') payment = await confirmPayment(paymentRecordId, payment);
+      if (payment?.status === 'VERIFIED') {
+        markPaid();
+      } else if (verifyError) {
+        setError(
+          `${getApiErrorMessage(verifyError, 'We could not confirm your payment yet.')} If money was deducted, do not pay again — use "Check payment status" below.`
+        );
       } else {
-        setPaymentMessage('Your payment is being confirmed by the bank. This page will not charge you twice; check Payment status shortly.');
+        setPaymentMessage('Your payment is being confirmed. Do not pay again; use "Check payment status" below in a minute.');
       }
     } catch (err) {
       setError(getApiErrorMessage(err, 'Could not start the payment.'));
@@ -251,6 +283,16 @@ export function InsurerPremiumStep({
             <p className="mt-4 border border-saffron bg-white px-3 py-2" role="status">
               {paymentMessage}
             </p>
+          ) : null}
+          {pendingPaymentId && !paid ? (
+            <button
+              type="button"
+              className="mt-3 mr-2 inline-flex min-h-11 items-center gap-2 border border-navy px-4 py-2 text-sm font-semibold text-navy disabled:opacity-60"
+              disabled={busy !== null}
+              onClick={() => void onCheckStatus()}
+            >
+              Check payment status
+            </button>
           ) : null}
           {availability?.mode === 'test' && !paid ? (
             <p className="mt-3 text-xs text-slate-600">Test mode: no real money is charged.</p>

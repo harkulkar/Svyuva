@@ -162,6 +162,18 @@ export async function getCollegePayment(user: AuthUser, id: string) {
   return toPaymentDto(payment);
 }
 
+/** Idempotent: unlocks the upload once its payment is verified and the amount matches the current quote. */
+async function ensureJobPaid(payment: { uploadJobId?: mongoose.Types.ObjectId | null; amountPaise?: number | null }): Promise<boolean> {
+  if (!payment.uploadJobId) return true;
+  const job = await UploadJob.findById(payment.uploadJobId);
+  if (!job) return false;
+  if (job.paymentStatus === 'PAID') return true;
+  const expected = expectedJobAmountPaise(job);
+  if (!expected || expected.amountPaise !== payment.amountPaise) return false;
+  await UploadJob.updateOne({ _id: job._id }, { $set: { paymentStatus: 'PAID' } });
+  return true;
+}
+
 async function markVerified(payment: PaymentRow, rp: RazorpayPayment, via: string, req?: Request) {
   const updated = await Payment.findOneAndUpdate(
     { _id: payment._id, status: { $in: OPEN_STATUSES } },
@@ -179,47 +191,50 @@ async function markVerified(payment: PaymentRow, rp: RazorpayPayment, via: strin
   );
   if (!updated) return payment;
 
-  let jobMarked = false;
-  if (updated.uploadJobId) {
-    const job = await UploadJob.findById(updated.uploadJobId);
-    const expected = job ? expectedJobAmountPaise(job) : null;
-    if (job && expected && expected.amountPaise === updated.amountPaise) {
-      job.paymentStatus = 'PAID';
-      await job.save();
-      jobMarked = true;
-    }
-  }
+  const jobMarked = await ensureJobPaid(updated);
   if (!jobMarked) {
     await Payment.updateOne(
       { _id: updated._id },
       { $set: { verificationInfo: `Verified via ${via}; amount differs from the current quote - manual review required` } }
     );
-    await notifyAdmins({
-      type: 'PAYMENT_PENDING',
-      title: 'Payment needs manual review',
-      message: 'A captured payment does not match the current premium quote for its upload.',
-      relatedEntityType: 'Payment',
-      relatedEntityId: String(updated._id),
-      actionUrl: '/admin/payments'
-    });
+    try {
+      await notifyAdmins({
+        type: 'PAYMENT_PENDING',
+        title: 'Payment needs manual review',
+        message: 'A captured payment does not match the current premium quote for its upload.',
+        relatedEntityType: 'Payment',
+        relatedEntityId: String(updated._id),
+        actionUrl: '/admin/payments'
+      });
+    } catch (error) {
+      logger.error('payment_admin_notify_failed', { message: error instanceof Error ? error.message : 'Unknown error' });
+    }
   }
 
-  await writeAudit({
-    userId: null,
-    action: 'PAYMENT_VERIFIED',
-    entity: 'Payment',
-    entityId: String(updated._id),
-    req,
-    metadata: { via, orderId: updated.razorpayOrderId, paymentId: rp.id, amountPaise: updated.amountPaise, jobMarked }
-  });
-  if (updated.instituteId) {
-    await notifyInstituteUsers(String(updated.instituteId), {
-      type: 'PAYMENT_VERIFIED',
-      title: 'Payment received',
-      message: 'Your premium payment was received. You can now import the validated students.',
-      relatedEntityType: 'Payment',
-      relatedEntityId: String(updated._id),
-      actionUrl: '/college/students/upload'
+  // The payment is already recorded; follow-up bookkeeping must never turn a successful payment into an error.
+  try {
+    await writeAudit({
+      userId: null,
+      action: 'PAYMENT_VERIFIED',
+      entity: 'Payment',
+      entityId: String(updated._id),
+      req,
+      metadata: { via, orderId: updated.razorpayOrderId, paymentId: rp.id, amountPaise: updated.amountPaise, jobMarked }
+    });
+    if (updated.instituteId) {
+      await notifyInstituteUsers(String(updated.instituteId), {
+        type: 'PAYMENT_VERIFIED',
+        title: 'Payment received',
+        message: 'Your premium payment was received. You can now import the validated students.',
+        relatedEntityType: 'Payment',
+        relatedEntityId: String(updated._id),
+        actionUrl: '/college/students/upload'
+      });
+    }
+  } catch (error) {
+    logger.error('payment_post_verify_failed', {
+      paymentId: String(updated._id),
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
   invalidateDashboardCache();
@@ -263,7 +278,10 @@ export async function verifyCollegePayment(
   req: Request
 ) {
   const payment = await findCollegePayment(user, { razorpayOrderId: input.razorpay_order_id });
-  if (payment.status === 'VERIFIED') return toPaymentDto(payment);
+  if (payment.status === 'VERIFIED') {
+    await ensureJobPaid(payment);
+    return toPaymentDto(payment);
+  }
 
   const config = await loadGatewayConfig();
   if (!config) throw new AppError('Online payment is not available right now.', 503, 'PAYMENT_UNAVAILABLE');
