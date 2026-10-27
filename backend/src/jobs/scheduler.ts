@@ -10,6 +10,7 @@ import { Review } from '../models/Review.js';
 import { emailService } from '../services/emailService.js';
 import { writeAudit } from '../services/auditService.js';
 import { logger } from '../utils/logger.js';
+import { reconcilePendingPayments } from '../payments/paymentService.js';
 import { getOperationalSettings } from '../settings/settings.service.js';
 import { notifyAdmins, notifyInstituteUsers } from '../notifications/notification.service.js';
 import { fanoutPendingAnnouncements, processScheduledAnnouncements } from '../notifications/announcement.service.js';
@@ -23,7 +24,8 @@ export const JOB_DEFINITIONS = [
   { name: 'fanout_announcements', retryable: true, intervalMs: env.JOB_TICK_MS },
   { name: 'send_pending_reminders', retryable: true, intervalMs: env.JOB_TICK_MS },
   { name: 'process_email_queue', retryable: true, intervalMs: env.JOB_TICK_MS },
-  { name: 'cleanup_expired_notifications', retryable: true, intervalMs: env.JOB_TICK_MS }
+  { name: 'cleanup_expired_notifications', retryable: true, intervalMs: env.JOB_TICK_MS },
+  { name: 'reconcile_payments', retryable: true, intervalMs: env.JOB_TICK_MS * 5 }
 ] as const;
 
 export type JobName = (typeof JOB_DEFINITIONS)[number]['name'];
@@ -131,6 +133,10 @@ async function execute(name: JobName): Promise<void> {
   }
   if (name === 'cleanup_expired_notifications') {
     await Notification.deleteMany({ expiresAt: { $ne: null, $lte: new Date() } });
+    return;
+  }
+  if (name === 'reconcile_payments') {
+    await reconcilePendingPayments();
   }
 }
 

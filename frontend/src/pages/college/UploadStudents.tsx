@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Seo } from '../../components/common/Seo';
@@ -24,6 +24,8 @@ export function CollegeUploadStudentsPage() {
   const [busy, setBusy] = useState<'upload' | 'import' | null>(null);
   const [uploadState, setUploadState] = useState<UploadUiState>('IDLE');
   const [controller, setController] = useState<AbortController | null>(null);
+  const [payment, setPayment] = useState({ required: false, paid: false });
+  const onPaidChange = useCallback((state: { required: boolean; paid: boolean }) => setPayment(state), []);
 
   async function onValidate(event: FormEvent) {
     event.preventDefault();
@@ -39,6 +41,7 @@ export function CollegeUploadStudentsPage() {
     const abort = new AbortController();
     setController(abort);
     try {
+      setPayment({ required: false, paid: false });
       setPreview(await uploadStudentExcel(file, abort.signal));
       setStatus('Validation complete. Review the preview before importing.');
       setUploadState('SUCCESS');
@@ -187,12 +190,15 @@ export function CollegeUploadStudentsPage() {
               </ul>
             </section>
           ) : null}
-          {preview.valid > 0 ? <InsurerPremiumStep key={preview.jobId} jobId={preview.jobId} studentCount={preview.valid} /> : null}
+          {preview.valid > 0 ? <InsurerPremiumStep key={preview.jobId} jobId={preview.jobId} studentCount={preview.valid} onPaidChange={onPaidChange} /> : null}
           <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" className="inline-flex items-center gap-2 bg-navy px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" onClick={() => void onImport()} disabled={busy !== null || preview.valid === 0}>
+            <button type="button" className="inline-flex items-center gap-2 bg-navy px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" onClick={() => void onImport()} disabled={busy !== null || preview.valid === 0 || (payment.required && !payment.paid)}>
               {busy === 'import' ? <ButtonSpinner /> : null}
               Import valid records
             </button>
+            {payment.required && !payment.paid ? (
+              <p className="self-center text-sm text-slate-600">Complete the online premium payment to enable import.</p>
+            ) : null}
             {preview.issues.length ? (
               <button type="button" className="border border-navy px-4 py-2 text-sm font-semibold text-navy" onClick={() => void downloadStudentImportErrors(preview.jobId)}>
                 Download error report

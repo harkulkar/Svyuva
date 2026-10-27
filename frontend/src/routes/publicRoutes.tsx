@@ -39,6 +39,7 @@ const AdminReportsPage = lazy(() => import('../pages/admin/Reports').then((m) =>
 const AdminAuditLogsPage = lazy(() => import('../pages/admin/AuditLogs').then((m) => ({ default: m.AdminAuditLogsPage })));
 const AdminUsersPage = lazy(() => import('../pages/admin/Users').then((m) => ({ default: m.AdminUsersPage })));
 const AdminProfilePage = lazy(() => import('../pages/admin/Profile').then((m) => ({ default: m.AdminProfilePage })));
+const AdminPaymentGatewayPage = lazy(() => import('../pages/admin/PaymentGateway').then((m) => ({ default: m.AdminPaymentGatewayPage })));
 const AdminSettingsPage = lazy(() => import('../pages/admin/Profile').then((m) => ({ default: m.AdminSettingsPage })));
 const AdminSystemHealthPage = lazy(() => import('../pages/admin/SystemHealth').then((m) => ({ default: m.AdminSystemHealthPage })));
 const AdminStorageHealthPage = lazy(() => import('../pages/admin/StorageHealth').then((m) => ({ default: m.AdminStorageHealthPage })));
@@ -209,6 +210,7 @@ export function AppRoutes() {
         <Route path="/admin/users" element={<AdminUsersPage />} />
         <Route path="/admin/profile" element={<AdminProfilePage />} />
         <Route path="/admin/settings" element={<AdminSettingsPage />} />
+        <Route path="/admin/payment-gateway" element={<AdminPaymentGatewayPage />} />
       </Route>
       <Route element={<PublicLayout />}>
         <Route path="/forbidden" element={<ForbiddenPage />} />

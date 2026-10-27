@@ -30,5 +30,10 @@ test('required collections include SVYSY domain sets', () => {
   assert.ok(REQUIRED_COLLECTIONS.includes('aiConversations'));
   assert.ok(REQUIRED_COLLECTIONS.includes('announcements'));
   assert.ok(REQUIRED_COLLECTIONS.includes('jobRuns'));
-  assert.equal(REQUIRED_COLLECTIONS.length, 27);
+  assert.ok(REQUIRED_COLLECTIONS.includes('payments'));
+  assert.ok(REQUIRED_COLLECTIONS.includes('dataSubmissions'));
+  assert.ok(REQUIRED_COLLECTIONS.includes('premiumRules'));
+  assert.ok(REQUIRED_COLLECTIONS.includes('premiumCalculations'));
+  assert.ok(REQUIRED_COLLECTIONS.includes('submissionVersions'));
+  assert.equal(REQUIRED_COLLECTIONS.length, 31);
 });

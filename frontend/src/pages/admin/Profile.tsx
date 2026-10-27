@@ -78,6 +78,11 @@ export function AdminProfilePage() {
           Save profile
         </button>
       </form>
+      <section className="mt-6 max-w-lg border border-slate-300 bg-white p-5">
+        <h2 className="text-sm font-semibold text-navy">Payment gateway</h2>
+        <p className="mt-1 text-sm text-slate-700">Add or change the Razorpay Key ID and Key Secret used for premium payments.</p>
+        <Link to="/admin/payment-gateway" className="mt-3 inline-flex min-h-11 items-center bg-navy px-4 py-2 text-sm font-semibold text-white">Manage payment gateway</Link>
+      </section>
       <NotificationPreferencesCard notificationsPath="/admin/notifications" />
       <form className="mt-6 max-w-lg space-y-4 border border-slate-300 bg-white p-5" onSubmit={passwordForm.handleSubmit(onPassword)} noValidate>
         <h2 className="text-sm font-semibold text-navy">Change password</h2>
@@ -101,6 +106,7 @@ export function AdminSettingsPage() {
       <p className="mt-2 text-sm text-slate-700">Account settings for this administrator. Scheme configuration belongs to a later phase.</p>
       <ul className="mt-6 space-y-2 text-sm">
         <li><Link className="font-semibold text-navy underline" to="/admin/profile">Profile and password</Link></li>
+        <li><Link className="font-semibold text-navy underline" to="/admin/payment-gateway">Payment gateway (Razorpay credentials)</Link></li>
         <li><Link className="font-semibold text-navy underline" to="/admin/users">User accounts (disable / re-enable)</Link></li>
         <li><Link className="font-semibold text-navy underline" to="/admin/notification-templates">Notification templates</Link></li>
         <li><Link className="font-semibold text-navy underline" to="/admin/announcements">Announcements</Link></li>

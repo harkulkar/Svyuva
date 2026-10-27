@@ -17,6 +17,14 @@ import type {
   UniversityOption
 } from '../types/auth';
 import type { ExcelPreview, ImportResult, InsurerPremiumQuote, Pagination, StudentDetail, StudentList, StudentMeta } from '../types/student';
+import type {
+  CheckoutOrder,
+  CheckoutSuccess,
+  PaymentAvailability,
+  PaymentGatewayAdminView,
+  PaymentGatewaySaveInput,
+  PaymentRecord
+} from '../types/payment';
 import type { AiAnalytics, AiChatResponse, AiLanguage, AiStatus, KnowledgeListItem } from '../types/ai';
 
 export const api = axios.create({
@@ -284,6 +292,54 @@ export async function proceedStudentUploadPayment(input: {
     '/api/college/students/payment/proceed',
     input
   );
+  if (!response.data.success) throw new Error(response.data.message);
+  return response.data.data;
+}
+
+export async function fetchPaymentAvailability(): Promise<PaymentAvailability> {
+  const response = await api.get<ApiResponse<PaymentAvailability>>('/api/college/payments/availability');
+  if (!response.data.success) throw new Error(response.data.message);
+  return response.data.data;
+}
+
+export async function createPaymentOrder(jobId: string): Promise<CheckoutOrder> {
+  const response = await api.post<ApiResponse<CheckoutOrder>>('/api/college/payments/create-order', { jobId });
+  if (!response.data.success) throw new Error(response.data.message);
+  return response.data.data;
+}
+
+export async function verifyPayment(input: CheckoutSuccess): Promise<PaymentRecord> {
+  const response = await api.post<ApiResponse<{ payment: PaymentRecord }>>('/api/college/payments/verify', input);
+  if (!response.data.success) throw new Error(response.data.message);
+  return response.data.data.payment;
+}
+
+export async function fetchPayment(id: string): Promise<PaymentRecord> {
+  const response = await api.get<ApiResponse<{ payment: PaymentRecord }>>(`/api/college/payments/${id}`);
+  if (!response.data.success) throw new Error(response.data.message);
+  return response.data.data.payment;
+}
+
+export async function fetchPaymentGatewaySettings(): Promise<PaymentGatewayAdminView> {
+  const response = await api.get<ApiResponse<PaymentGatewayAdminView>>('/api/admin/payment-gateway');
+  if (!response.data.success) throw new Error(response.data.message);
+  return response.data.data;
+}
+
+export async function savePaymentGatewaySettings(input: PaymentGatewaySaveInput): Promise<PaymentGatewayAdminView> {
+  const response = await api.put<ApiResponse<PaymentGatewayAdminView>>('/api/admin/payment-gateway', input, { timeout: 40000 });
+  if (!response.data.success) throw new Error(response.data.message);
+  return response.data.data;
+}
+
+export async function testPaymentGateway(): Promise<{ ok: boolean; mode: 'test' | 'live'; message: string }> {
+  const response = await api.post<ApiResponse<{ ok: boolean; mode: 'test' | 'live'; message: string }>>('/api/admin/payment-gateway/test');
+  if (!response.data.success) throw new Error(response.data.message);
+  return response.data.data;
+}
+
+export async function clearPaymentGatewaySettings(currentPassword: string): Promise<PaymentGatewayAdminView> {
+  const response = await api.post<ApiResponse<PaymentGatewayAdminView>>('/api/admin/payment-gateway/clear', { currentPassword });
   if (!response.data.success) throw new Error(response.data.message);
   return response.data.data;
 }

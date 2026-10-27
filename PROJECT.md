@@ -39,7 +39,7 @@ College APIs **ignore** client-supplied `instituteId`. A college cannot read ano
 | Notifications, analytics, reports, AI (read-only tools) | Working |
 | Document **file** upload/download HTTP | Feature-flagged; typically **501** |
 | Insurance / payment / e-card **HTTP APIs** | Feature-flagged; typically **501** (status UI placeholders exist) |
-| Live payment gateway | Not implemented |
+| Live payment gateway | Razorpay online premium payment for the student-upload flow, configured by an admin (see `PAYMENT_INTEGRATION.md`); off until credentials are saved and enabled |
 | Legacy production data migration into this DB | Tooling exists; **not** a production cutover |
 | Old production hosts / DNS | **Untouched** |
 

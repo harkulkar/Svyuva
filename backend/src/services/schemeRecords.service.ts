@@ -5,6 +5,7 @@ import { Document } from '../models/Document.js';
 import { ECard } from '../models/ECard.js';
 import { InsuranceEnrollment } from '../models/InsuranceEnrollment.js';
 import { Payment } from '../models/Payment.js';
+import { isOnlinePaymentEnabled } from '../payments/gatewayConfig.js';
 import { Student } from '../models/Student.js';
 import { Institute } from '../models/Institute.js';
 import { requireCollegeInstituteId } from './instituteService.js';
@@ -124,7 +125,7 @@ export async function listSchemeRecords(user: AuthUser, kind: SchemeKind, query:
     const institutes = await instituteNames(rows.map((row) => String(row.instituteId || '')));
     return {
       kind,
-      httpApi: flags.paymentHttpApi,
+      httpApi: flags.paymentHttpApi || (await isOnlinePaymentEnabled()),
       items: rows.map((row) => {
         const student = students.get(String(row.studentId || ''));
         return {
