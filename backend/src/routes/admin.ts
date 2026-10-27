@@ -62,9 +62,11 @@ import {
 } from '../analytics/analytics.controller.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { requireRole } from '../middleware/requireRole.js';
-import { exportLimiter, searchLimiter } from '../middleware/rateLimit.js';
+import { exportLimiter, paymentLimiter, searchLimiter } from '../middleware/rateLimit.js';
 import { validateBody, validateQuery } from '../middleware/validate.js';
 import { ok } from '../utils/apiResponse.js';
+import { adminGatewayClear, adminGatewayGet, adminGatewayPut, adminGatewayTest } from '../payments/payment.controller.js';
+import { gatewayClearSchema, gatewayConfigSchema } from '../payments/payment.validators.js';
 import { adminInstituteQuerySchema, createUniversitySchema, rejectInstituteSchema } from '../validators/authValidators.js';
 import { adminStudentListQuerySchema } from '../validators/studentValidators.js';
 import {
@@ -188,6 +190,10 @@ adminRouter.get('/system-jobs', adminJobsList);
 adminRouter.post('/system-jobs/:name/retry', adminJobRetry);
 adminRouter.get('/operational-settings', adminSettingsList);
 adminRouter.patch('/operational-settings', validateBody(settingsPatchSchema), adminSettingsPatch);
+adminRouter.get('/payment-gateway', adminGatewayGet);
+adminRouter.put('/payment-gateway', paymentLimiter, validateBody(gatewayConfigSchema), adminGatewayPut);
+adminRouter.post('/payment-gateway/test', paymentLimiter, adminGatewayTest);
+adminRouter.post('/payment-gateway/clear', paymentLimiter, validateBody(gatewayClearSchema), adminGatewayClear);
 adminRouter.get('/audit-logs', validateQuery(adminAuditQuerySchema), adminAuditLogs);
 adminRouter.get('/profile', adminProfile);
 adminRouter.patch('/profile', validateBody(adminProfileUpdateSchema), patchAdminProfile);

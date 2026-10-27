@@ -25,6 +25,7 @@ import { safeUploadFilename } from '../utils/spreadsheet.js';
 import type { AuthUser } from '../types/auth.js';
 import type { AdminStudentListQuery, StudentListQuery, StudentUpdateInput, StudentWriteInput } from '../validators/studentValidators.js';
 import { computeInsurerPremium, insurerPremiumOptions } from '../data/insurerPremiumCatalog.js';
+import { isOnlinePaymentEnabled } from '../payments/gatewayConfig.js';
 
 const LIST_FIELDS =
   'studentId enrollmentNumber rollNumber firstName middleName lastName gender course stream year semester academicYear mobile email status instituteId universityId createdAt updatedAt';
@@ -569,6 +570,9 @@ export async function importCollegeExcel(user: AuthUser, jobId: string, req: Req
   if (job.expiresAt.getTime() < Date.now()) {
     throw new AppError('The upload preview has expired. Upload the file again.', 410, 'PREVIEW_EXPIRED');
   }
+  if (job.paymentStatus !== 'PAID' && (await isOnlinePaymentEnabled())) {
+    throw new AppError('Pay the premium online before importing these students.', 402, 'PAYMENT_REQUIRED');
+  }
 
   const rows = (job.validRows as Array<StudentWriteInput & { sourceRow?: number; dateOfBirth: string | Date }>) ?? [];
   if (!rows.length) {
@@ -654,7 +658,7 @@ export async function importCollegeExcel(user: AuthUser, jobId: string, req: Req
   };
 }
 
-async function loadCollegeUploadJob(user: AuthUser, jobId: string) {
+export async function loadCollegeUploadJob(user: AuthUser, jobId: string) {
   const { instituteId } = await collegeOwnership(user);
   if (!mongoose.isValidObjectId(jobId)) {
     throw new AppError('Upload preview not found', 404, 'NOT_FOUND');
@@ -679,6 +683,9 @@ export async function quoteCollegeUploadPremium(
   req?: Request
 ) {
   const job = await loadCollegeUploadJob(user, input.jobId);
+  if (job.paymentStatus === 'PAID') {
+    throw new AppError('Payment for this upload is already complete, so the policy cannot be changed.', 409, 'ALREADY_PAID');
+  }
   if (job.validCount < 1) {
     throw new AppError('Validate the Excel file and keep at least one valid student before selecting a policy.', 400, 'NO_VALID_ROWS');
   }
@@ -693,7 +700,7 @@ export async function quoteCollegeUploadPremium(
   job.insurer = quote.insurer;
   job.policyType = quote.policyType;
   job.premiumQuote = quote;
-  if (job.paymentStatus === 'NONE' || !job.paymentStatus) {
+  if (job.paymentStatus === 'NONE' || !job.paymentStatus || job.paymentStatus === 'PAYMENT_PENDING') {
     job.paymentStatus = 'QUOTED';
   }
   await job.save();

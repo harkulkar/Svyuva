@@ -8,7 +8,7 @@ import {
   timelineHandler
 } from '../analytics/analytics.controller.js';
 import { analyticsQuerySchema, reportQuerySchema } from '../notifications/notification.validators.js';
-import { exportLimiter, uploadLimiter } from '../middleware/rateLimit.js';
+import { exportLimiter, paymentLimiter, uploadLimiter } from '../middleware/rateLimit.js';
 import {
   collegeStudentDetail,
   collegeStudentImportErrors,
@@ -29,6 +29,13 @@ import { excelTimeout, studentExcelUpload } from '../middleware/excelUpload.js';
 import { requireRole } from '../middleware/requireRole.js';
 import { validateBody, validateQuery } from '../middleware/validate.js';
 import { ok } from '../utils/apiResponse.js';
+import {
+  collegeCreatePaymentOrder,
+  collegePaymentAvailability,
+  collegePaymentDetail,
+  collegeVerifyPayment
+} from '../payments/payment.controller.js';
+import { createPaymentOrderSchema, verifyPaymentSchema } from '../payments/payment.validators.js';
 import { collegeProfileUpdateSchema } from '../validators/authValidators.js';
 import {
   importJobSchema,
@@ -111,6 +118,10 @@ collegeRouter.post('/students/upload', uploadLimiter, excelTimeout, studentExcel
 collegeRouter.get('/students/premium-options', collegeStudentPremiumOptions);
 collegeRouter.post('/students/premium-quote', validateBody(studentPremiumQuoteSchema), quoteCollegeStudentPremium);
 collegeRouter.post('/students/payment/proceed', validateBody(studentPremiumQuoteSchema), proceedCollegeStudentPayment);
+collegeRouter.get('/payments/availability', collegePaymentAvailability);
+collegeRouter.post('/payments/create-order', paymentLimiter, validateBody(createPaymentOrderSchema), collegeCreatePaymentOrder);
+collegeRouter.post('/payments/verify', paymentLimiter, validateBody(verifyPaymentSchema), collegeVerifyPayment);
+collegeRouter.get('/payments/:id', collegePaymentDetail);
 collegeRouter.post('/students/import', uploadLimiter, validateBody(importJobSchema), importCollegeStudents);
 collegeRouter.get('/students/import/:jobId/errors', collegeStudentImportErrors);
 collegeRouter.get('/students', validateQuery(studentListQuerySchema), collegeStudents);

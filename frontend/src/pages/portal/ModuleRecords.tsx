@@ -33,7 +33,7 @@ const COPY: Record<
     title: 'Payment status',
     path: '/college/payment-status',
     empty: 'No payment records found.',
-    note: 'Payment gateway actions are not live. These rows are stored payment statuses for your institute.'
+    note: 'Stored payment statuses for your institute. Premiums are paid online from Upload students once the payment gateway is enabled by an administrator.'
   },
   ecards: {
     title: 'E-card',

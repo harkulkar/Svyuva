@@ -147,7 +147,11 @@ const envSchema = z.object({
   DASHBOARD_CACHE_SECONDS: z.coerce.number().int().min(0).max(600).default(30),
   VAPID_PUBLIC_KEY: z.string().optional().default(''),
   VAPID_PRIVATE_KEY: z.string().optional().default(''),
-  VAPID_SUBJECT: z.string().optional().default('')
+  VAPID_SUBJECT: z.string().optional().default(''),
+  PAYMENT_ENCRYPTION_KEY: z.string().optional().default(''),
+  RAZORPAY_KEY_ID: z.string().optional().default(''),
+  RAZORPAY_KEY_SECRET: z.string().optional().default(''),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional().default('')
 });
 
 const parsed = envSchema.safeParse(process.env);

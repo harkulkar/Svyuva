@@ -1,6 +1,16 @@
 import { useEffect, useState } from 'react';
 import { ButtonSpinner } from '../common/Loading';
-import { getApiErrorMessage, proceedStudentUploadPayment, quoteStudentUploadPremium } from '../../services/api';
+import {
+  createPaymentOrder,
+  fetchPayment,
+  fetchPaymentAvailability,
+  getApiErrorMessage,
+  proceedStudentUploadPayment,
+  quoteStudentUploadPremium,
+  verifyPayment
+} from '../../services/api';
+import { openRazorpayCheckout } from '../../utils/razorpayCheckout';
+import type { PaymentAvailability, PaymentRecord } from '../../types/payment';
 import type { InsurerCode, InsurerPremiumQuote, PolicyType } from '../../types/student';
 
 export const INSURERS: Array<{ code: InsurerCode; name: string }> = [
@@ -20,13 +30,45 @@ function money(currency: string, value: number) {
   return `${currency} ${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-export function InsurerPremiumStep({ jobId, studentCount }: { jobId: string; studentCount: number }) {
+const CONFIRM_ATTEMPTS = 4;
+const CONFIRM_DELAY_MS = 2500;
+
+export function InsurerPremiumStep({
+  jobId,
+  studentCount,
+  onPaidChange
+}: {
+  jobId: string;
+  studentCount: number;
+  /** Reports whether online payment is switched on and whether this upload has been paid. */
+  onPaidChange?: (state: { required: boolean; paid: boolean }) => void;
+}) {
   const [insurer, setInsurer] = useState<InsurerCode | ''>('');
   const [policyType, setPolicyType] = useState<PolicyType | ''>('');
   const [quote, setQuote] = useState<InsurerPremiumQuote | null>(null);
   const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<'quote' | 'pay' | null>(null);
+  const [availability, setAvailability] = useState<PaymentAvailability | null>(null);
+  const [paid, setPaid] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchPaymentAvailability()
+      .then((result) => {
+        if (!cancelled) setAvailability(result);
+      })
+      .catch(() => {
+        if (!cancelled) setAvailability({ enabled: false, mode: null });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    onPaidChange?.({ required: Boolean(availability?.enabled), paid });
+  }, [availability, paid, onPaidChange]);
 
   useEffect(() => {
     setPolicyType('');
@@ -57,8 +99,56 @@ export function InsurerPremiumStep({ jobId, studentCount }: { jobId: string; stu
     };
   }, [jobId, insurer, policyType]);
 
+  async function confirmPayment(first: PaymentRecord): Promise<PaymentRecord> {
+    let current = first;
+    for (let attempt = 0; attempt < CONFIRM_ATTEMPTS && current.status !== 'VERIFIED'; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, CONFIRM_DELAY_MS));
+      current = await fetchPayment(first.id);
+    }
+    return current;
+  }
+
+  async function onPayOnline() {
+    setBusy('pay');
+    setError(null);
+    setPaymentMessage(null);
+    try {
+      const order = await createPaymentOrder(jobId);
+      const result = await openRazorpayCheckout(order.checkout, (reason) => setError(reason));
+      if (result.status === 'dismissed') {
+        setPaymentMessage('The payment window was closed. No payment was taken. You can try again.');
+        return;
+      }
+      setError(null);
+      let payment: PaymentRecord;
+      try {
+        payment = await verifyPayment(result.response);
+      } catch (err) {
+        setError(
+          `${getApiErrorMessage(err, 'We could not confirm your payment yet.')} If money was deducted, do not pay again — the status will update automatically.`
+        );
+        return;
+      }
+      if (payment.status !== 'VERIFIED') payment = await confirmPayment(payment);
+      if (payment.status === 'VERIFIED') {
+        setPaid(true);
+        setPaymentMessage('Payment received. You can now import the valid students.');
+      } else {
+        setPaymentMessage('Your payment is being confirmed by the bank. This page will not charge you twice; check Payment status shortly.');
+      }
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Could not start the payment.'));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function onProceed() {
     if (!insurer || !policyType) return;
+    if (availability?.enabled) {
+      await onPayOnline();
+      return;
+    }
     setBusy('pay');
     setError(null);
     try {
@@ -91,6 +181,7 @@ export function InsurerPremiumStep({ jobId, studentCount }: { jobId: string; stu
               name="insurer"
               value={item.code}
               checked={insurer === item.code}
+              disabled={paid}
               onChange={() => setInsurer(item.code)}
             />
             <span>{item.name}</span>
@@ -110,6 +201,7 @@ export function InsurerPremiumStep({ jobId, studentCount }: { jobId: string; stu
                   name="policyType"
                   value={item.type}
                   checked={policyType === item.type}
+                  disabled={paid}
                   onChange={() => setPolicyType(item.type)}
                 />
                 <span>{item.label}</span>
@@ -159,15 +251,19 @@ export function InsurerPremiumStep({ jobId, studentCount }: { jobId: string; stu
             <p className="mt-4 border border-saffron bg-white px-3 py-2" role="status">
               {paymentMessage}
             </p>
-          ) : (
+          ) : null}
+          {availability?.mode === 'test' && !paid ? (
+            <p className="mt-3 text-xs text-slate-600">Test mode: no real money is charged.</p>
+          ) : null}
+          {paid || (paymentMessage && !availability?.enabled) ? null : (
             <button
               type="button"
               className="mt-4 inline-flex min-h-11 items-center gap-2 bg-navy px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-              disabled={busy !== null}
+              disabled={busy !== null || availability === null}
               onClick={() => void onProceed()}
             >
               {busy === 'pay' ? <ButtonSpinner /> : null}
-              Proceed to payment
+              {availability?.enabled ? `Pay ${money(quote.currency, quote.totalPremium)} online` : 'Proceed to payment'}
             </button>
           )}
         </div>

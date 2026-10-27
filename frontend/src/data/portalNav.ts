@@ -52,6 +52,7 @@ export const ADMIN_LINKS: PortalNavItem[] = [
       { to: '/admin/settings', label: 'Overview', end: true },
       { to: '/admin/notification-templates', label: 'Notification templates' },
       { to: '/admin/profile', label: 'Profile' },
+      { to: '/admin/payment-gateway', label: 'Payment gateway' },
       { to: '/admin/users', label: 'Users' }
     ]
   }

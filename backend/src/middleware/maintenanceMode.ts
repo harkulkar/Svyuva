@@ -5,7 +5,7 @@ import { User } from '../models/User.js';
 import { readAccessToken } from '../utils/cookies.js';
 import { verifyAccessToken } from '../utils/jwt.js';
 
-const ALWAYS_ALLOWED = new Set(['/api/health', '/api/health/db']);
+const ALWAYS_ALLOWED = new Set(['/api/health', '/api/health/db', '/api/payments/razorpay/webhook']);
 
 async function isActiveAdmin(req: Request): Promise<boolean> {
   const token = readAccessToken(req);
