@@ -97,9 +97,9 @@ export const MEDICLAIM = {
 export const INSURERS = {
   icici: {
     title: 'ICICI Lombard GIC',
-    person: 'Amrish Duddalwar',
-    mobile: '8605007196',
-    email: 'Amrish.duddalwar@icicilombard.com',
+    person: 'Bantikumar Lanjewar',
+    mobile: '9011046209',
+    email: 'bantikumar.lanjewar@icicilombard.com',
     address: '5th Floor Landmark, Plot No 5 & 6 Ramdaspeth, Nagpur 440010, Maharashtra'
   },
   national: {
