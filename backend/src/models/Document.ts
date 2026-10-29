@@ -11,6 +11,7 @@ export const documentSchema = new Schema(
     ownerId: { type: Schema.Types.ObjectId, default: null },
     instituteId: { type: Schema.Types.ObjectId, ref: 'Institute', default: null },
     submissionId: { type: Schema.Types.ObjectId, ref: 'DataSubmission', default: null },
+    uploadJobId: { type: Schema.Types.ObjectId, ref: 'UploadJob', default: null },
     studentId: { type: Schema.Types.ObjectId, ref: 'Student', default: null },
     documentType: { type: String, trim: true, default: '' },
     originalFilename: { type: String, trim: true, default: '' },
@@ -45,6 +46,7 @@ documentSchema.index({ sha256: 1 }, { sparse: true });
 documentSchema.index({ instituteId: 1 });
 documentSchema.index({ submissionId: 1, instituteId: 1 });
 documentSchema.index({ studentId: 1 });
+documentSchema.index({ uploadJobId: 1, documentType: 1, isCurrent: 1 }, { sparse: true });
 documentSchema.index({ fileStatus: 1 });
 documentSchema.index({ reviewStatus: 1, instituteId: 1 });
 documentSchema.index({ parentDocumentId: 1 });

@@ -148,6 +148,8 @@ const envSchema = z.object({
   VAPID_PUBLIC_KEY: z.string().optional().default(''),
   VAPID_PRIVATE_KEY: z.string().optional().default(''),
   VAPID_SUBJECT: z.string().optional().default(''),
+  DOCUMENT_STORAGE_DIR: z.string().optional().default(''),
+  MAX_DOCUMENT_FILE_SIZE_MB: z.coerce.number().positive().max(25).default(5),
   PAYMENT_ENCRYPTION_KEY: z.string().optional().default(''),
   RAZORPAY_KEY_ID: z.string().optional().default(''),
   RAZORPAY_KEY_SECRET: z.string().optional().default(''),

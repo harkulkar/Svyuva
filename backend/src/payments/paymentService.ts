@@ -7,6 +7,7 @@ import { invalidateDashboardCache } from '../analytics/analytics.service.js';
 import { notifyAdmins, notifyInstituteUsers } from '../notifications/notification.service.js';
 import { writeAudit } from '../services/auditService.js';
 import { requireCollegeInstituteId } from '../services/instituteService.js';
+import { assertUploadDocumentsComplete } from '../services/uploadDocumentStatus.js';
 import { loadCollegeUploadJob } from '../services/studentService.js';
 import type { AuthUser } from '../types/auth.js';
 import { logger } from '../utils/logger.js';
@@ -77,6 +78,7 @@ export async function createCollegePaymentOrder(user: AuthUser, input: { jobId: 
   if (expected.amountPaise < MIN_AMOUNT_PAISE) {
     throw new AppError('The premium is below the minimum payable amount.', 400, 'AMOUNT_TOO_LOW');
   }
+  await assertUploadDocumentsComplete(job);
   const instituteId = requireCollegeInstituteId(user);
   const { quote, amountPaise } = expected;
 

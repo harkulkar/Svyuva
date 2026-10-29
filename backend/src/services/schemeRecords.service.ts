@@ -6,6 +6,7 @@ import { ECard } from '../models/ECard.js';
 import { InsuranceEnrollment } from '../models/InsuranceEnrollment.js';
 import { Payment } from '../models/Payment.js';
 import { isOnlinePaymentEnabled } from '../payments/gatewayConfig.js';
+import { isUploadDocumentType, uploadDocumentLabel } from '../data/uploadDocumentCatalog.js';
 import { Student } from '../models/Student.js';
 import { Institute } from '../models/Institute.js';
 import { requireCollegeInstituteId } from './instituteService.js';
@@ -91,7 +92,7 @@ export async function listSchemeRecords(user: AuthUser, kind: SchemeKind, query:
         .sort({ updatedAt: -1 })
         .skip(skip)
         .limit(limit)
-        .select('documentType originalFilename fileStatus studentId instituteId updatedAt mimeType')
+        .select('documentType originalFilename fileStatus storageKey studentId instituteId updatedAt mimeType')
         .lean()
     ]);
     const students = await studentNames(rows.map((row) => String(row.studentId || '')));
@@ -103,9 +104,10 @@ export async function listSchemeRecords(user: AuthUser, kind: SchemeKind, query:
         const student = students.get(String(row.studentId || ''));
         return {
           id: String(row._id),
-          title: row.documentType || row.originalFilename || 'Document',
-          subtitle: student?.studentId || row.mimeType || '',
+          title: (row.documentType && isUploadDocumentType(row.documentType) ? uploadDocumentLabel(row.documentType) : row.documentType) || row.originalFilename || 'Document',
+          subtitle: student?.studentId || row.originalFilename || row.mimeType || '',
           status: row.fileStatus || 'UNKNOWN',
+          hasFile: row.fileStatus === 'AVAILABLE' && Boolean(row.storageKey),
           studentId: row.studentId ? String(row.studentId) : null,
           instituteId: row.instituteId ? String(row.instituteId) : null,
           instituteName: institutes.get(String(row.instituteId || '')) || null,
