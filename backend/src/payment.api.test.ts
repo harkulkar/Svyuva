@@ -18,6 +18,8 @@ const { University } = await import('./models/University.js');
 const { RefreshToken } = await import('./models/RefreshToken.js');
 const { UploadJob } = await import('./models/UploadJob.js');
 const { Payment } = await import('./models/Payment.js');
+const { Document } = await import('./models/Document.js');
+const { UPLOAD_DOCUMENT_TYPES } = await import('./data/uploadDocumentCatalog.js');
 const { SystemSetting } = await import('./models/SystemSetting.js');
 const { hashPassword } = await import('./utils/password.js');
 const { setRazorpayFetch } = await import('./payments/razorpayClient.js');
@@ -88,6 +90,7 @@ test('payment gateway settings, order, verification, webhook and import gate', a
     const instituteIds = institutes.map((row) => row._id);
     await RefreshToken.deleteMany({ userId: { $in: users.map((user) => user._id) } });
     await Payment.deleteMany({ instituteId: { $in: instituteIds } });
+    await Document.deleteMany({ instituteId: { $in: instituteIds } });
     await UploadJob.deleteMany({ instituteId: { $in: instituteIds } });
     await SystemSetting.deleteOne({ key: 'payment.razorpay' });
     await User.deleteMany({ email: { $in: [adminEmail, collegeAEmail, collegeBEmail] } });
@@ -188,6 +191,28 @@ test('payment gateway settings, order, verification, webhook and import gate', a
     const res = await collegeA.post('/api/college/students/import').send({ jobId });
     assert.equal(res.status, 402);
     assert.equal(res.body.code, 'PAYMENT_REQUIRED');
+  });
+
+  await t.test('an order is refused until the ICICI document pack is complete', async () => {
+    const res = await collegeA.post('/api/college/payments/create-order').send({ jobId });
+    assert.equal(res.status, 400);
+    assert.equal(res.body.code, 'DOCUMENTS_REQUIRED');
+    assert.equal(await Payment.countDocuments({ uploadJobId: jobId }), 0);
+    await Document.insertMany(
+      UPLOAD_DOCUMENT_TYPES.map((documentType) => ({
+        ownerType: 'INSTITUTE',
+        instituteId: instituteAId,
+        uploadJobId: jobId,
+        documentType,
+        originalFilename: `${documentType}.pdf`,
+        mimeType: 'application/pdf',
+        sizeBytes: 100,
+        storageKey: null,
+        fileStatus: 'AVAILABLE',
+        reviewStatus: 'PENDING_REVIEW',
+        isCurrent: true
+      }))
+    );
   });
 
   await t.test('order amount is computed server-side and the order is reused', async () => {

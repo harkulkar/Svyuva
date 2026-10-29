@@ -17,6 +17,7 @@ import type {
   UniversityOption
 } from '../types/auth';
 import type { ExcelPreview, ImportResult, InsurerPremiumQuote, Pagination, StudentDetail, StudentList, StudentMeta } from '../types/student';
+import type { UploadDocumentList } from '../types/uploadDocuments';
 import type {
   CheckoutOrder,
   CheckoutSuccess,
@@ -294,6 +295,40 @@ export async function proceedStudentUploadPayment(input: {
   );
   if (!response.data.success) throw new Error(response.data.message);
   return response.data.data;
+}
+
+export async function fetchUploadDocuments(jobId: string): Promise<UploadDocumentList> {
+  const response = await api.get<ApiResponse<UploadDocumentList>>(`/api/college/uploads/${jobId}/documents`);
+  if (!response.data.success) throw new Error(response.data.message);
+  return response.data.data;
+}
+
+export async function uploadUploadDocument(jobId: string, type: string, file: File): Promise<UploadDocumentList> {
+  const form = new FormData();
+  form.append('file', file);
+  const response = await api.post<ApiResponse<UploadDocumentList>>(`/api/college/uploads/${jobId}/documents/${type}`, form, {
+    timeout: 60000,
+    transformRequest: [
+      (data, headers) => {
+        if (headers && typeof headers.delete === 'function') {
+          headers.delete('Content-Type');
+        }
+        return data as FormData;
+      }
+    ]
+  });
+  if (!response.data.success) throw new Error(response.data.message);
+  return response.data.data;
+}
+
+export async function downloadUploadDocument(jobId: string, type: string, filename: string): Promise<void> {
+  const response = await api.get(`/api/college/uploads/${jobId}/documents/${type}/file`, { responseType: 'blob' });
+  downloadBlob(new Blob([response.data]), filename);
+}
+
+export async function downloadAdminDocument(documentId: string, filename: string): Promise<void> {
+  const response = await api.get(`/api/admin/documents/${documentId}/file`, { responseType: 'blob' });
+  downloadBlob(new Blob([response.data]), filename);
 }
 
 export async function fetchPaymentAvailability(): Promise<PaymentAvailability> {

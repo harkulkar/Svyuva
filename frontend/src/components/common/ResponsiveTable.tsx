@@ -22,7 +22,7 @@ export function ResponsiveTable<T extends { id: string }>({
   columns: TableColumn<T>[];
   rows: T[];
   empty: string;
-  href?: (row: T) => string;
+  href?: (row: T) => string | undefined;
   cardTitle: (row: T) => string;
   cardLines?: (row: T) => string[];
 }) {

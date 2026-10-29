@@ -8,7 +8,13 @@ import {
   timelineHandler
 } from '../analytics/analytics.controller.js';
 import { analyticsQuerySchema, reportQuerySchema } from '../notifications/notification.validators.js';
-import { exportLimiter, paymentLimiter, uploadLimiter } from '../middleware/rateLimit.js';
+import { documentUploadLimiter, exportLimiter, paymentLimiter, uploadLimiter } from '../middleware/rateLimit.js';
+import { documentFileUpload } from '../middleware/documentUpload.js';
+import {
+  downloadUploadDocumentHandler,
+  listUploadDocumentsHandler,
+  uploadDocumentHandler
+} from '../controllers/uploadDocumentController.js';
 import {
   collegeStudentDetail,
   collegeStudentImportErrors,
@@ -118,6 +124,9 @@ collegeRouter.post('/students/upload', uploadLimiter, excelTimeout, studentExcel
 collegeRouter.get('/students/premium-options', collegeStudentPremiumOptions);
 collegeRouter.post('/students/premium-quote', validateBody(studentPremiumQuoteSchema), quoteCollegeStudentPremium);
 collegeRouter.post('/students/payment/proceed', validateBody(studentPremiumQuoteSchema), proceedCollegeStudentPayment);
+collegeRouter.get('/uploads/:jobId/documents', listUploadDocumentsHandler);
+collegeRouter.post('/uploads/:jobId/documents/:type', documentUploadLimiter, documentFileUpload, uploadDocumentHandler);
+collegeRouter.get('/uploads/:jobId/documents/:type/file', downloadUploadDocumentHandler);
 collegeRouter.get('/payments/availability', collegePaymentAvailability);
 collegeRouter.post('/payments/create-order', paymentLimiter, validateBody(createPaymentOrderSchema), collegeCreatePaymentOrder);
 collegeRouter.post('/payments/verify', paymentLimiter, validateBody(verifyPaymentSchema), collegeVerifyPayment);
