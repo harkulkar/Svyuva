@@ -91,3 +91,27 @@ test('stored files live under a private root and keys cannot escape it', async (
     assert.throws(() => storage.resolveStorageKey(bad), /Invalid storage key/);
   }
 });
+
+test('institute documents are grouped per upload, current files first, newest group first', async () => {
+  const { groupInstituteDocuments } = await import('./services/instituteDocuments.js');
+  const at = (d: string) => new Date(`2026-11-0${d}T10:00:00Z`);
+  const groups = groupInstituteDocuments(
+    [
+      { _id: 'a', documentType: 'BML', originalFilename: 'bml-old.pdf', uploadedAt: at('1'), isCurrent: false, versionNumber: 1, uploadJobId: 'job1' },
+      { _id: 'b', documentType: 'BML', originalFilename: 'bml.pdf', uploadedAt: at('2'), isCurrent: true, versionNumber: 2, uploadJobId: 'job1' },
+      { _id: 'c', documentType: 'DCM_MATRIX', originalFilename: 'dcm.xlsx', uploadedAt: at('2'), isCurrent: true, uploadJobId: 'job1' },
+      { _id: 'd', documentType: 'PEP_KYC', originalFilename: 'kyc.pdf', uploadedAt: at('5'), isCurrent: true, uploadJobId: 'job2' },
+      { _id: 'e', documentType: 'Legacy thing', originalFilename: 'old.pdf', createdAt: at('3'), uploadJobId: null }
+    ],
+    [{ _id: 'job1', filename: 'students.xlsx', insurer: 'ICICI', policyType: 'GPA', paymentStatus: 'PAID', validCount: 10 }]
+  );
+  assert.deepEqual(groups.map((g) => g.uploadJobId), ['job2', null, 'job1']);
+  const job1 = groups[2]!;
+  assert.equal(job1.uploadFilename, 'students.xlsx');
+  assert.equal(job1.paymentStatus, 'PAID');
+  assert.deepEqual(job1.items.map((i) => i.id), ['b', 'c', 'a'], 'current files first, then replaced');
+  assert.equal(job1.items[0]!.label, 'BML');
+  assert.equal(job1.items[2]!.isCurrent, false);
+  assert.equal(groups[0]!.uploadFilename, null, 'a job that has expired still shows its files');
+  assert.equal(groups[1]!.items[0]!.label, 'Legacy thing');
+});

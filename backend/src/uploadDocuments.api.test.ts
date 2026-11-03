@@ -199,4 +199,20 @@ test('ICICI upload documents: upload, validation, isolation, payment gate, admin
     assert.equal((await collegeA.get(`/api/admin/documents/${doc._id}/file`)).status, 403);
     assert.equal((await admin.get('/api/admin/documents/000000000000000000000000/file')).status, 404);
   });
+
+  await t.test('admin sees all of an institute\'s documents grouped by upload', async () => {
+    const res = await admin.get(`/api/admin/institutes/${instituteAId}/documents`);
+    assert.equal(res.status, 200);
+    assert.equal(res.body.data.groups.length, 1);
+    const group = res.body.data.groups[0];
+    assert.equal(group.uploadJobId, jobId);
+    assert.equal(group.insurer, 'ICICI');
+    assert.equal(group.items.length, 8, 'only current versions by default');
+    assert.ok(group.items.every((item: { isCurrent: boolean }) => item.isCurrent));
+    const all = await admin.get(`/api/admin/institutes/${instituteAId}/documents?includeReplaced=true`);
+    assert.equal(all.body.data.groups[0].items.length, 9, 'the replaced BML version is included on request');
+    assert.equal((await admin.get(`/api/admin/institutes/${instituteBId}/documents`)).body.data.groups.length, 0);
+    assert.equal((await collegeA.get(`/api/admin/institutes/${instituteAId}/documents`)).status, 403);
+    assert.equal((await admin.get('/api/admin/institutes/000000000000000000000000/documents')).status, 404);
+  });
 });

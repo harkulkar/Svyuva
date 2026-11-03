@@ -1,6 +1,12 @@
 import type { NextFunction, Request, Response } from 'express';
 import { AppError } from '../middleware/errorHandler.js';
-import { adminDownloadDocument, downloadUploadDocument, listUploadDocuments, uploadUploadDocument } from '../services/uploadDocumentService.js';
+import {
+  adminDownloadDocument,
+  downloadUploadDocument,
+  listInstituteDocuments,
+  listUploadDocuments,
+  uploadUploadDocument
+} from '../services/uploadDocumentService.js';
 import { ok } from '../utils/apiResponse.js';
 
 function requireUser(req: Request) {
@@ -39,6 +45,15 @@ export async function downloadUploadDocumentHandler(req: Request, res: Response,
 export async function adminDocumentFileHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     await adminDownloadDocument(requireUser(req), String(req.params.id), req, res);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function adminInstituteDocumentsHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const includeReplaced = String(req.query.includeReplaced || '') === 'true';
+    res.json(ok(await listInstituteDocuments(requireUser(req), String(req.params.id), includeReplaced), 'OK'));
   } catch (error) {
     next(error);
   }

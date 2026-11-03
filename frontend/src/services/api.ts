@@ -17,7 +17,7 @@ import type {
   UniversityOption
 } from '../types/auth';
 import type { ExcelPreview, ImportResult, InsurerPremiumQuote, Pagination, StudentDetail, StudentList, StudentMeta } from '../types/student';
-import type { UploadDocumentList } from '../types/uploadDocuments';
+import type { InstituteDocuments, UploadDocumentList } from '../types/uploadDocuments';
 import type {
   CheckoutOrder,
   CheckoutSuccess,
@@ -324,6 +324,14 @@ export async function uploadUploadDocument(jobId: string, type: string, file: Fi
 export async function downloadUploadDocument(jobId: string, type: string, filename: string): Promise<void> {
   const response = await api.get(`/api/college/uploads/${jobId}/documents/${type}/file`, { responseType: 'blob' });
   downloadBlob(new Blob([response.data]), filename);
+}
+
+export async function fetchInstituteDocuments(instituteId: string, includeReplaced: boolean): Promise<InstituteDocuments> {
+  const response = await api.get<ApiResponse<InstituteDocuments>>(`/api/admin/institutes/${instituteId}/documents`, {
+    params: includeReplaced ? { includeReplaced: 'true' } : undefined
+  });
+  if (!response.data.success) throw new Error(response.data.message);
+  return response.data.data;
 }
 
 export async function downloadAdminDocument(documentId: string, filename: string): Promise<void> {

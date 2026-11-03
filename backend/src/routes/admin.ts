@@ -65,7 +65,7 @@ import { requireRole } from '../middleware/requireRole.js';
 import { exportLimiter, paymentLimiter, searchLimiter } from '../middleware/rateLimit.js';
 import { validateBody, validateQuery } from '../middleware/validate.js';
 import { ok } from '../utils/apiResponse.js';
-import { adminDocumentFileHandler } from '../controllers/uploadDocumentController.js';
+import { adminDocumentFileHandler, adminInstituteDocumentsHandler } from '../controllers/uploadDocumentController.js';
 import { adminGatewayClear, adminGatewayGet, adminGatewayPut, adminGatewayTest } from '../payments/payment.controller.js';
 import { gatewayClearSchema, gatewayConfigSchema } from '../payments/payment.validators.js';
 import { adminInstituteQuerySchema, createUniversitySchema, rejectInstituteSchema } from '../validators/authValidators.js';
@@ -230,6 +230,7 @@ adminRouter.get('/institutes/pending', validateQuery(adminInstituteQuerySchema),
 adminRouter.get('/registrations', validateQuery(adminInstituteQuerySchema), pendingInstitutes);
 adminRouter.get('/institutes', validateQuery(adminInstituteQuerySchema), adminInstitutes);
 adminRouter.get('/institutes/:id/timeline', timelineHandler);
+adminRouter.get('/institutes/:id/documents', adminInstituteDocumentsHandler);
 adminRouter.get('/institutes/:id', adminInstituteDetail);
 adminRouter.patch('/institutes/:id/approve', approveInstituteHandler);
 adminRouter.patch('/institutes/:id/reject', validateBody(rejectInstituteSchema), rejectInstituteHandler);

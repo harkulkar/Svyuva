@@ -10,6 +10,9 @@ import {
 } from '../data/uploadDocumentCatalog.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { Document } from '../models/Document.js';
+import { Institute } from '../models/Institute.js';
+import { UploadJob } from '../models/UploadJob.js';
+import { groupInstituteDocuments } from './instituteDocuments.js';
 import type { AuthUser } from '../types/auth.js';
 import { safeUploadFilename } from '../utils/spreadsheet.js';
 import { ALLOWED_DOCUMENT_EXTENSIONS, validateDocumentFile } from './documentFileValidation.js';
@@ -151,6 +154,27 @@ export async function adminDownloadDocument(admin: AuthUser, documentId: string,
     metadata: { documentType: doc.documentType, instituteId: doc.instituteId ? String(doc.instituteId) : null }
   });
   await sendStoredFile(res, doc);
+}
+
+/** Every stored file an institute has uploaded, grouped by student upload (admin view). */
+export async function listInstituteDocuments(admin: AuthUser, instituteId: string, includeReplaced: boolean) {
+  if (admin.role !== 'ADMIN') throw new AppError('Not allowed.', 403, 'FORBIDDEN');
+  if (!mongoose.isValidObjectId(instituteId)) throw new AppError('Institute not found.', 404, 'NOT_FOUND');
+  const institute = await Institute.findById(instituteId).select('_id');
+  if (!institute) throw new AppError('Institute not found.', 404, 'NOT_FOUND');
+
+  const filter: Record<string, unknown> = { instituteId, fileStatus: 'AVAILABLE', storageKey: { $nin: [null, ''] } };
+  if (!includeReplaced) filter.isCurrent = true;
+  const rows = await Document.find(filter)
+    .sort({ uploadedAt: -1, createdAt: -1 })
+    .limit(400)
+    .select('documentType originalFilename mimeType sizeBytes uploadedAt createdAt versionNumber isCurrent uploadJobId')
+    .lean();
+  const jobIds = [...new Set(rows.map((row) => (row.uploadJobId ? String(row.uploadJobId) : '')).filter(Boolean))];
+  const jobs = jobIds.length
+    ? await UploadJob.find({ _id: { $in: jobIds } }).select('filename insurer policyType paymentStatus validCount').lean()
+    : [];
+  return { total: rows.length, groups: groupInstituteDocuments(rows, jobs) };
 }
 
 export { uploadDocumentLabel };

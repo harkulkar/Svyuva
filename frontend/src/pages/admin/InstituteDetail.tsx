@@ -6,6 +6,7 @@ import { Loading, ButtonSpinner } from '../../components/common/Loading';
 import { ConfirmDialog } from '../../components/common/AdminUi';
 import { ActivityTimeline } from '../../components/common/ActivityTimeline';
 import { ApprovalPanel } from '../../components/common/ApprovalPanel';
+import { InstituteDocuments } from '../../components/common/InstituteDocuments';
 import { WorkflowTimeline } from '../../components/common/WorkflowTimeline';
 import {
   approveInstituteRequest,
@@ -144,6 +145,7 @@ export function AdminInstituteDetailPage() {
           </div>
         </div>
       ) : null}
+      {institute && id ? <InstituteDocuments instituteId={id} /> : null}
       {history.length ? (
         <section className="mt-6 border border-slate-300 bg-white p-5">
           <h2 className="text-sm font-semibold text-navy">Workflow timeline</h2>

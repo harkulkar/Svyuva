@@ -32,12 +32,14 @@ The list lives in `backend/src/data/uploadDocumentCatalog.ts` (one place; the UI
 
 ## Who can see files
 - A college can list, upload, replace and download only its own upload's documents.
-- Admins can download any stored file from **Admin → Documents** (desktop table, *Download*). Each download is written to the audit log (`DOCUMENT_DOWNLOADED`).
+- Admins see every document an institute has uploaded on **Admin → Institutes → View** (section *Uploaded documents*, grouped by student upload, with *Download*; tick *Show replaced versions* for older files). Each download is written to the audit log (`DOCUMENT_DOWNLOADED`).
+- The flat list at `/admin/documents` (no menu link) also has a *Download* button on desktop.
 
 ## API
 - `GET  /api/college/uploads/:jobId/documents` — list + completeness
 - `POST /api/college/uploads/:jobId/documents/:type` — multipart field `file`
 - `GET  /api/college/uploads/:jobId/documents/:type/file` — download
+- `GET  /api/admin/institutes/:id/documents[?includeReplaced=true]` — admin list, grouped by upload
 - `GET  /api/admin/documents/:id/file` — admin download
 
 These endpoints are independent of the `FEATURE_DOCUMENT_HTTP` flag, which still governs the older document module.
