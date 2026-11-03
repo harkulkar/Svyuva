@@ -7,6 +7,7 @@ export type SchemeRecord = {
   instituteId?: string | null;
   instituteName?: string | null;
   updatedAt?: string | null;
+  hasFile?: boolean;
 };
 
 export type SchemeRecordList = {

@@ -5,7 +5,7 @@ import { PageEmpty, PageError, SkeletonGrid } from '../../components/common/Page
 import { Pagination } from '../../components/common/Pagination';
 import { ResponsiveTable } from '../../components/common/ResponsiveTable';
 import { FileUpload, type UploadUiState } from '../../components/common/FileUpload';
-import { fetchSchemeRecords, getApiErrorMessage, requestDocumentUpload, fetchDocumentChecklist } from '../../services/api';
+import { downloadAdminDocument, fetchSchemeRecords, getApiErrorMessage, requestDocumentUpload, fetchDocumentChecklist } from '../../services/api';
 import { DocumentChecklist } from '../../components/common/DocumentChecklist';
 import { validateDocumentFile } from '../../utils/fileValidation';
 import type { SchemeRecordList } from '../../types/scheme';
@@ -154,7 +154,7 @@ export function AdminModuleRecordsPage({ kind }: { kind: Kind }) {
           caption={copy.title}
           rows={data.items}
           empty={copy.empty}
-          href={(row) => (row.studentId ? `/admin/students/${row.studentId}` : `/admin/institutes/${row.instituteId || ''}`)}
+          href={(row) => (row.hasFile ? undefined : row.studentId ? `/admin/students/${row.studentId}` : `/admin/institutes/${row.instituteId || ''}`)}
           cardTitle={(row) => row.title}
           cardLines={(row) => [row.subtitle, row.instituteName || '', row.status].filter(Boolean)}
           columns={[
@@ -166,7 +166,15 @@ export function AdminModuleRecordsPage({ kind }: { kind: Kind }) {
               key: 'open',
               header: ' ',
               render: (row) =>
-                row.studentId ? (
+                row.hasFile ? (
+                  <button
+                    type="button"
+                    className="font-semibold text-navy underline"
+                    onClick={() => void downloadAdminDocument(row.id, row.subtitle || 'document').catch((err) => setError(getApiErrorMessage(err, 'Could not download the file.')))}
+                  >
+                    Download
+                  </button>
+                ) : row.studentId ? (
                   <Link className="font-semibold text-navy underline" to={`/admin/students/${row.studentId}`}>
                     Student
                   </Link>

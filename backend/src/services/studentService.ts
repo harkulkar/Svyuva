@@ -26,6 +26,7 @@ import type { AuthUser } from '../types/auth.js';
 import type { AdminStudentListQuery, StudentListQuery, StudentUpdateInput, StudentWriteInput } from '../validators/studentValidators.js';
 import { computeInsurerPremium, insurerPremiumOptions } from '../data/insurerPremiumCatalog.js';
 import { isOnlinePaymentEnabled } from '../payments/gatewayConfig.js';
+import { assertUploadDocumentsComplete } from './uploadDocumentStatus.js';
 
 const LIST_FIELDS =
   'studentId enrollmentNumber rollNumber firstName middleName lastName gender course stream year semester academicYear mobile email status instituteId universityId createdAt updatedAt';
@@ -729,6 +730,7 @@ export async function requestCollegeUploadPayment(
 ) {
   const quoted = await quoteCollegeUploadPremium(user, input, req);
   const job = await loadCollegeUploadJob(user, input.jobId);
+  await assertUploadDocumentsComplete(job);
   job.paymentStatus = 'AWAITING_PAYMENT_DETAILS';
   job.paymentRequestedAt = new Date();
   await job.save();

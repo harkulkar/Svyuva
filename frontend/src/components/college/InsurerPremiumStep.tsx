@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ButtonSpinner } from '../common/Loading';
 import {
   createPaymentOrder,
@@ -10,6 +10,7 @@ import {
   verifyPayment
 } from '../../services/api';
 import { openRazorpayCheckout } from '../../utils/razorpayCheckout';
+import { UploadDocumentsStep } from './UploadDocumentsStep';
 import type { PaymentAvailability, PaymentRecord } from '../../types/payment';
 import type { InsurerCode, InsurerPremiumQuote, PolicyType } from '../../types/student';
 
@@ -52,6 +53,8 @@ export function InsurerPremiumStep({
   const [availability, setAvailability] = useState<PaymentAvailability | null>(null);
   const [paid, setPaid] = useState(false);
   const [pendingPaymentId, setPendingPaymentId] = useState<string | null>(null);
+  const [docs, setDocs] = useState({ required: false, complete: false });
+  const onDocsStatus = useCallback((state: { required: boolean; complete: boolean }) => setDocs(state), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,6 +78,7 @@ export function InsurerPremiumStep({
     setPolicyType('');
     setQuote(null);
     setPaymentMessage(null);
+    setDocs({ required: false, complete: false });
   }, [insurer]);
 
   useEffect(() => {
@@ -245,6 +249,8 @@ export function InsurerPremiumStep({
 
       {error ? <p className="mt-4 text-sm text-red-800" role="alert">{error}</p> : null}
 
+      {quote && insurer === 'ICICI' ? <UploadDocumentsStep jobId={jobId} onStatus={onDocsStatus} /> : null}
+
       {quote ? (
         <div className="mt-6 border border-slate-200 bg-slate-50 p-4 text-sm">
           <h3 className="font-semibold text-navy">Premium calculation</h3>
@@ -297,11 +303,14 @@ export function InsurerPremiumStep({
           {availability?.mode === 'test' && !paid ? (
             <p className="mt-3 text-xs text-slate-600">Test mode: no real money is charged.</p>
           ) : null}
+          {!paid && docs.required && !docs.complete ? (
+            <p className="mt-3 text-sm text-slate-700" role="status">Upload all required documents above to continue to payment.</p>
+          ) : null}
           {paid || (paymentMessage && !availability?.enabled) ? null : (
             <button
               type="button"
               className="mt-4 inline-flex min-h-11 items-center gap-2 bg-navy px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-              disabled={busy !== null || availability === null}
+              disabled={busy !== null || availability === null || (docs.required && !docs.complete)}
               onClick={() => void onProceed()}
             >
               {busy === 'pay' ? <ButtonSpinner /> : null}

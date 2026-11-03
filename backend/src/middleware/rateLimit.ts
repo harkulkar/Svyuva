@@ -29,4 +29,5 @@ export const uploadLimiter = makeLimiter(20);
 export const exportLimiter = makeLimiter(20);
 export const searchLimiter = makeLimiter(60);
 export const paymentLimiter = makeLimiter(30);
+export const documentUploadLimiter = makeLimiter(80);
 export const notificationLimiter = makeLimiter(120);
