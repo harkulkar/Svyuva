@@ -233,6 +233,22 @@ async function markVerified(payment: PaymentRow, rp: RazorpayPayment, via: strin
         actionUrl: '/college/students/upload'
       });
     }
+    if (jobMarked && updated.instituteId && updated.uploadJobId) {
+      try {
+        await sendCollegePaymentEmails({
+          instituteId: String(updated.instituteId),
+          uploadJobId: String(updated.uploadJobId),
+          paymentId: String(updated._id),
+          amountPaise: updated.amountPaise,
+          razorpayPaymentId: rp.id
+        });
+      } catch (error) {
+        logger.error('payment_mail_failed', {
+          paymentId: String(updated._id),
+          message: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
     if (jobMarked && updated.uploadJobId) {
       try {
         await importPaidUploadJob(String(updated.uploadJobId), req);
@@ -242,15 +258,6 @@ async function markVerified(payment: PaymentRow, rp: RazorpayPayment, via: strin
           message: error instanceof Error ? error.message : 'Unknown error'
         });
       }
-    }
-    if (jobMarked && updated.instituteId && updated.uploadJobId) {
-      await sendCollegePaymentEmails({
-        instituteId: String(updated.instituteId),
-        uploadJobId: String(updated.uploadJobId),
-        paymentId: String(updated._id),
-        amountPaise: updated.amountPaise,
-        razorpayPaymentId: rp.id
-      });
     }
   } catch (error) {
     logger.error('payment_post_verify_failed', {
