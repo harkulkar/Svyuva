@@ -43,7 +43,9 @@ test('the payable amount is derived server-side in paise with GST', () => {
   assert.equal(rupeesToPaise(236), 23600);
   assert.equal(rupeesToPaise(0.1 + 0.2), 30);
   const icici = expectedJobAmountPaise({ insurer: 'ICICI', policyType: 'GPA', validCount: 10 });
-  assert.equal(icici?.amountPaise, 23600);
+  assert.equal(icici?.quote.totalPremium, 236);
+  assert.equal(icici?.quote.stampDuty, 3);
+  assert.equal(icici?.amountPaise, 23900);
   assert.equal(expectedJobAmountPaise({ insurer: 'ICICI', policyType: 'XXX', validCount: 10 }), null);
   assert.equal(expectedJobAmountPaise({ insurer: null, policyType: null, validCount: 10 }), null);
 });

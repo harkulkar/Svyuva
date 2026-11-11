@@ -48,6 +48,8 @@ test('insurer policy premium applies 18% GST per student rate', () => {
   assert.equal(national?.basePremium, 620);
   assert.equal(national?.gstAmount, 111.6);
   assert.equal(national?.totalPremium, 731.6);
+  assert.equal(national?.stampDuty, 3);
+  assert.equal(national?.amountPayable, 734.6);
   const iciciGpa = computeInsurerPremium({ insurer: 'ICICI', policyType: 'GPA', studentCount: 2 });
   assert.equal(iciciGpa?.ratePerStudent, 20);
   assert.equal(iciciGpa?.basePremium, 40);

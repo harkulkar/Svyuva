@@ -25,6 +25,21 @@ export function excelTimeout(req: Request, _res: Response, next: NextFunction): 
   next();
 }
 
+const policyDocumentUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 }
+});
+
+export function policyDocumentFile(req: Request, res: Response, next: NextFunction): void {
+  policyDocumentUpload.single('file')(req, res, (err: unknown) => {
+    if (err) {
+      next(err instanceof Error ? err : new AppError('The document could not be uploaded.', 400, 'UPLOAD_ERROR'));
+      return;
+    }
+    next();
+  });
+}
+
 export function studentExcelUpload(req: Request, res: Response, next: NextFunction): void {
   upload.single('file')(req, res, (err: unknown) => {
     if (err) {

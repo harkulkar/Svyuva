@@ -76,7 +76,7 @@ test('payment gateway settings, order, verification, webhook and import gate', a
     }
     if (method === 'GET' && url.includes('/orders?count=1')) return json({ items: [] });
     if (method === 'GET' && url.endsWith(`/payments/${paymentId}`)) {
-      return json({ id: paymentId, order_id: orderId, status: 'captured', amount: 23600, currency: 'INR', method: 'upi' });
+      return json({ id: paymentId, order_id: orderId, status: 'captured', amount: 23900, currency: 'INR', method: 'upi' });
     }
     return json({ error: { description: 'unexpected call' } }, 500);
   });
@@ -140,6 +140,16 @@ test('payment gateway settings, order, verification, webhook and import gate', a
     insurer: 'ICICI',
     policyType: 'GPA',
     paymentStatus: 'QUOTED',
+    policyDocuments: [
+      'GPA_PROPOSAL',
+      'STUDENT_DATA_SHEET',
+      'PEP_KYC',
+      'AADHAAR_PAN_SIGNATORY',
+      'BML',
+      'COLLEGE_PAN_GST',
+      'NOT_NPO_DECLARATION',
+      'DCM_MATRIX'
+    ].map((key) => ({ key, originalFilename: `${key}.pdf`, storedName: `${key}.pdf`, sizeBytes: 12 })),
     expiresAt: new Date(Date.now() + 3600_000)
   });
   const jobId = String(job._id);
@@ -193,7 +203,7 @@ test('payment gateway settings, order, verification, webhook and import gate', a
   await t.test('order amount is computed server-side and the order is reused', async () => {
     const res = await collegeA.post('/api/college/payments/create-order').send({ jobId });
     assert.equal(res.status, 200);
-    assert.equal(res.body.data.checkout.amountPaise, 23600);
+    assert.equal(res.body.data.checkout.amountPaise, 23900);
     assert.equal(res.body.data.checkout.orderId, orderId);
     assert.equal(res.body.data.checkout.keyId, keyId);
     assert.ok(!JSON.stringify(res.body).includes(keySecret));
@@ -246,7 +256,7 @@ test('payment gateway settings, order, verification, webhook and import gate', a
   await t.test('webhooks require a valid signature and are idempotent', async () => {
     const body = JSON.stringify({
       event: 'payment.captured',
-      payload: { payment: { entity: { id: paymentId, order_id: orderId, status: 'captured', amount: 23600, currency: 'INR' } } }
+      payload: { payment: { entity: { id: paymentId, order_id: orderId, status: 'captured', amount: 23900, currency: 'INR' } } }
     });
     const bad = await request(app)
       .post('/api/payments/razorpay/webhook')
@@ -273,7 +283,7 @@ test('payment gateway settings, order, verification, webhook and import gate', a
     assert.equal(second.status, 200);
     assert.equal(second.body.data.reason, 'duplicate');
 
-    const refund = JSON.stringify({ event: 'refund.processed', payload: { refund: { entity: { amount: 23600, payment_id: paymentId } } } });
+    const refund = JSON.stringify({ event: 'refund.processed', payload: { refund: { entity: { amount: 23900, payment_id: paymentId } } } });
     const refunded = await request(app)
       .post('/api/payments/razorpay/webhook')
       .set('Content-Type', 'application/json')

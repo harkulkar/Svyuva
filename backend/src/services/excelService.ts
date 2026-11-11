@@ -278,6 +278,44 @@ export function buildStudentTemplate(): Buffer {
   return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
 }
 
+function sheetDate(value: unknown): string {
+  if (value == null || value === '') return '';
+  const date = value instanceof Date ? value : new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value);
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function sheetStudentName(row: Record<string, unknown>): string {
+  const first = typeof row.firstName === 'string' ? row.firstName.trim() : '';
+  const middle = typeof row.middleName === 'string' ? row.middleName.trim() : '';
+  const last = typeof row.lastName === 'string' ? row.lastName.trim() : '';
+  if (first && last && first === last && !middle) return first;
+  return [first, middle, last].filter(Boolean).join(' ');
+}
+
+export function buildStudentDataWorkbook(rows: Array<Record<string, unknown>>): Buffer {
+  const body = rows.map((row) => [
+    row.serialNumber || row.rollNumber || '',
+    row.studentId || row.enrollmentNumber || '',
+    sheetStudentName(row),
+    row.parentName || '',
+    sheetDate(row.dateOfBirth),
+    sheetDate(row.parentDateOfBirth),
+    row.age ?? '',
+    row.parentAge ?? '',
+    row.gender || '',
+    row.parentRelation || '',
+    row.email || '',
+    row.mobile || ''
+  ]);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([[...EXCEL_COLUMNS], ...body]), 'Students');
+  return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+}
+
 export function buildErrorWorkbook(issues: ExcelIssue[]): Buffer {
   const rows = [
     ['Row', 'Field', 'Identifier', 'Error'],

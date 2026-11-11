@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Seo } from '../../components/common/Seo';
@@ -8,6 +8,7 @@ import { validateExcelFile } from '../../utils/fileValidation';
 import {
   downloadStudentImportErrors,
   downloadStudentTemplate,
+  getApiErrorCode,
   getApiErrorMessage,
   importStudentExcel,
   uploadStudentExcel
@@ -56,21 +57,39 @@ export function CollegeUploadStudentsPage() {
     }
   }
 
-  async function onImport() {
-    if (!preview) return;
+  const onImport = useCallback(async () => {
+    if (!preview || result) return;
     setBusy('import');
     setError(null);
-    setStatus('Importing valid records…');
+    setStatus('Adding valid students…');
     try {
       setResult(await importStudentExcel(preview.jobId));
-      setStatus('Import successful.');
+      setStatus('Valid students have been added.');
     } catch (err) {
-      setError(getApiErrorMessage(err));
-      setStatus(null);
+      if (getApiErrorCode(err) === 'ALREADY_IMPORTED') {
+        setResult({
+          jobId: preview.jobId,
+          filename: preview.filename,
+          totalRows: preview.totalRows,
+          imported: preview.valid,
+          skipped: preview.invalid + preview.duplicates,
+          failed: 0,
+          duplicates: preview.duplicates,
+          invalid: preview.invalid
+        });
+        setStatus('Valid students have been added.');
+      } else {
+        setError(getApiErrorMessage(err));
+        setStatus(null);
+      }
     } finally {
       setBusy(null);
     }
-  }
+  }, [preview, result]);
+
+  useEffect(() => {
+    if (payment.required && payment.paid) void onImport();
+  }, [payment.required, payment.paid, onImport]);
 
   return (
     <>
@@ -78,7 +97,7 @@ export function CollegeUploadStudentsPage() {
       <p className="text-sm"><Link to="/college/students" className="text-navy underline">All students</Link></p>
       <h1 className="mt-2 text-2xl font-semibold text-navy">Upload students</h1>
       <p className="mt-2 text-sm text-slate-700">
-        Download the template on this device, complete the rows on a computer if editing Excel on a phone is impractical, then return here to validate and import.
+        Download the template on this device, complete the rows on a computer if editing Excel on a phone is impractical, then return here to validate and pay. After payment, the valid students are saved automatically.
         This page does not include a spreadsheet editor.
       </p>
       <p className="mt-2 text-sm text-slate-700">
@@ -192,13 +211,16 @@ export function CollegeUploadStudentsPage() {
           ) : null}
           {preview.valid > 0 ? <InsurerPremiumStep key={preview.jobId} jobId={preview.jobId} studentCount={preview.valid} onPaidChange={onPaidChange} /> : null}
           <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" className="inline-flex items-center gap-2 bg-navy px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" onClick={() => void onImport()} disabled={busy !== null || preview.valid === 0 || (payment.required && !payment.paid)}>
-              {busy === 'import' ? <ButtonSpinner /> : null}
-              Import valid records
-            </button>
-            {payment.required && !payment.paid ? (
-              <p className="self-center text-sm text-slate-600">Complete the online premium payment to enable import.</p>
-            ) : null}
+            {payment.required && !result ? (
+              <p className="self-center text-sm text-slate-600">
+                {payment.paid ? 'Payment received. Valid students are being added.' : 'Pay the premium online. Valid students are added automatically after payment.'}
+              </p>
+            ) : (
+              <button type="button" className="inline-flex items-center gap-2 bg-navy px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" onClick={() => void onImport()} disabled={busy !== null || preview.valid === 0}>
+                {busy === 'import' ? <ButtonSpinner /> : null}
+                Import valid records
+              </button>
+            )}
             {preview.issues.length ? (
               <button type="button" className="border border-navy px-4 py-2 text-sm font-semibold text-navy" onClick={() => void downloadStudentImportErrors(preview.jobId)}>
                 Download error report
@@ -209,7 +231,7 @@ export function CollegeUploadStudentsPage() {
       ) : null}
       {result ? (
         <section className="mt-6 border border-green-200 bg-green-50 p-5" role="status">
-          <h2 className="text-lg font-semibold text-navy">Import successful</h2>
+          <h2 className="text-lg font-semibold text-navy">Students added</h2>
           <dl className="mt-3 grid gap-3 sm:grid-cols-5 text-sm">
             <Stat label="Total rows" value={result.totalRows} />
             <Stat label="Imported" value={result.imported} />

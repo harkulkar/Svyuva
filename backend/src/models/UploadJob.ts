@@ -16,6 +16,19 @@ const uploadJobSchema = new Schema(
     insurer: { type: String, trim: true, default: null },
     policyType: { type: String, trim: true, default: null },
     premiumQuote: { type: Schema.Types.Mixed, default: null },
+    policyDocuments: {
+      type: [
+        {
+          key: { type: String, required: true, trim: true },
+          originalFilename: { type: String, required: true, trim: true },
+          storedName: { type: String, required: true, trim: true },
+          mimeType: { type: String, trim: true, default: '' },
+          sizeBytes: { type: Number, default: 0 },
+          uploadedAt: { type: Date, default: Date.now }
+        }
+      ],
+      default: []
+    },
     paymentStatus: { type: String, trim: true, default: 'NONE' },
     paymentRequestedAt: { type: Date, default: null },
     expiresAt: { type: Date, required: true }

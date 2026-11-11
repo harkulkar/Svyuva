@@ -16,7 +16,7 @@ import type {
   SystemHealth,
   UniversityOption
 } from '../types/auth';
-import type { ExcelPreview, ImportResult, InsurerPremiumQuote, Pagination, StudentDetail, StudentList, StudentMeta } from '../types/student';
+import type { ExcelPreview, ImportResult, InstitutePolicyDocument, InsurerPremiumQuote, Pagination, PolicyDocumentUpload, StudentDetail, StudentList, StudentMeta } from '../types/student';
 import type {
   CheckoutOrder,
   CheckoutSuccess,
@@ -73,6 +73,14 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export function getApiErrorCode(error: unknown): string | null {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as ApiFailure | undefined;
+    return data?.code ?? null;
+  }
+  return null;
+}
 
 export function getApiErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
   if (axios.isAxiosError(error)) {
@@ -183,6 +191,17 @@ export async function fetchAdminInstitutes(params: Record<string, string | numbe
   return response.data.data;
 }
 
+export async function fetchAdminInstituteDocuments(id: string): Promise<InstitutePolicyDocument[]> {
+  const response = await api.get<ApiResponse<{ documents: InstitutePolicyDocument[] }>>(`/api/admin/institutes/${id}/policy-documents`);
+  if (!response.data.success) throw new Error(response.data.message);
+  return response.data.data.documents;
+}
+
+export async function downloadAdminInstituteDocument(instituteId: string, documentId: string, filename: string): Promise<void> {
+  const response = await api.get(`/api/admin/institutes/${instituteId}/policy-documents/${documentId}/download`, { responseType: 'blob' });
+  downloadBlob(response.data as Blob, filename);
+}
+
 export async function fetchAdminInstitute(id: string): Promise<InstituteProfile> {
   const response = await api.get<ApiResponse<{ institute: InstituteProfile }>>(`/api/admin/institutes/${id}`);
   if (!response.data.success) throw new Error(response.data.message);
@@ -257,6 +276,30 @@ export async function uploadStudentExcel(file: File, signal?: AbortSignal): Prom
   const response = await api.post<ApiResponse<ExcelPreview>>('/api/college/students/upload', form, {
     timeout: 60000,
     signal,
+    transformRequest: [
+      (data, headers) => {
+        if (headers && typeof headers.delete === 'function') {
+          headers.delete('Content-Type');
+        }
+        return data as FormData;
+      }
+    ]
+  });
+  if (!response.data.success) throw new Error(response.data.message);
+  return response.data.data;
+}
+
+export async function uploadPolicyDocument(input: {
+  jobId: string;
+  documentKey: string;
+  file: File;
+}): Promise<{ documents: PolicyDocumentUpload[] }> {
+  const form = new FormData();
+  form.append('jobId', input.jobId);
+  form.append('documentKey', input.documentKey);
+  form.append('file', input.file);
+  const response = await api.post<ApiResponse<{ documents: PolicyDocumentUpload[] }>>('/api/college/students/policy-documents', form, {
+    timeout: 60000,
     transformRequest: [
       (data, headers) => {
         if (headers && typeof headers.delete === 'function') {

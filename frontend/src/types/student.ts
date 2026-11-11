@@ -121,8 +121,33 @@ export type InsurerPremiumQuote = {
   basePremium: number;
   gstAmount: number;
   totalPremium: number;
+  stampDuty: number;
+  amountPayable: number;
   currency: string;
   formula: string;
+};
+
+export type InstitutePolicyDocument = {
+  id: string;
+  key: string;
+  label: string;
+  filename: string;
+  sizeBytes: number;
+  uploadedAt: string | null;
+  insurer: string;
+  insurerName: string;
+  policyType: string;
+  policyLabel: string;
+  uploadFilename: string;
+  uploadJobId: string;
+};
+
+export type PolicyDocumentUpload = {
+  key: string;
+  label: string;
+  filename: string;
+  sizeBytes: number;
+  uploadedAt: string | null;
 };
 
 export type ImportResult = {

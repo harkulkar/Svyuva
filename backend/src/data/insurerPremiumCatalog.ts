@@ -1,4 +1,18 @@
 export const GST_RATE = 0.18;
+export const STAMP_DUTY = 3;
+
+export const POLICY_DOCUMENTS = [
+  { key: 'GPA_PROPOSAL', label: 'GPA Proposal Form' },
+  { key: 'STUDENT_DATA_SHEET', label: 'Student Data Sheet (Annexure)' },
+  { key: 'PEP_KYC', label: 'Signed & Stamped PEP–KYC' },
+  { key: 'AADHAAR_PAN_SIGNATORY', label: 'Aadhaar & PAN of Authorized Signatory' },
+  { key: 'BML', label: 'BML' },
+  { key: 'COLLEGE_PAN_GST', label: 'College PAN & GST Certificate / NON‑GST Declaration' },
+  { key: 'NOT_NPO_DECLARATION', label: 'College Not‑NPO/NGO Declaration' },
+  { key: 'DCM_MATRIX', label: 'DCM Matrix' }
+] as const;
+
+export type PolicyDocumentKey = (typeof POLICY_DOCUMENTS)[number]['key'];
 
 export const INSURER_CODES = ['NATIONAL', 'ICICI'] as const;
 export type InsurerCode = (typeof INSURER_CODES)[number];
@@ -60,6 +74,8 @@ export function computeInsurerPremium(input: {
   const basePremium = roundMoney(studentCount * ratePerStudent);
   const gstAmount = roundMoney(basePremium * GST_RATE);
   const totalPremium = roundMoney(basePremium + gstAmount);
+  const stampDuty = STAMP_DUTY;
+  const amountPayable = roundMoney(totalPremium + stampDuty);
   const company = INSURERS.find((item) => item.code === input.insurer);
   return {
     insurer: input.insurer,
@@ -72,7 +88,9 @@ export function computeInsurerPremium(input: {
     basePremium,
     gstAmount,
     totalPremium,
+    stampDuty,
+    amountPayable,
     currency: 'INR',
-    formula: `(${studentCount} × ₹${ratePerStudent}) + ${Math.round(GST_RATE * 100)}% GST`
+    formula: `(${studentCount} × ₹${ratePerStudent}) + ${Math.round(GST_RATE * 100)}% GST + ₹${stampDuty} stamp duty`
   };
 }

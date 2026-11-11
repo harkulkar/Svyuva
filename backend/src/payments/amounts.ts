@@ -8,5 +8,5 @@ export function rupeesToPaise(rupees: number): number {
 export function expectedJobAmountPaise(job: { insurer?: string | null; policyType?: string | null; validCount: number }) {
   if (!job.insurer || !job.policyType) return null;
   const quote = computeInsurerPremium({ insurer: job.insurer, policyType: job.policyType, studentCount: job.validCount });
-  return quote ? { quote, amountPaise: rupeesToPaise(quote.totalPremium) } : null;
+  return quote ? { quote, amountPaise: rupeesToPaise(quote.amountPayable) } : null;
 }

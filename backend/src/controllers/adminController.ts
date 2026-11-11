@@ -25,6 +25,7 @@ import {
   rejectInstitute,
   setInstituteActiveStatus
 } from '../services/instituteService.js';
+import { listInstitutePolicyDocuments, readInstitutePolicyDocument } from '../services/policyDocumentStorage.js';
 import { ok } from '../utils/apiResponse.js';
 import { writeAudit } from '../services/auditService.js';
 import type { AdminInstituteQuery, CreateUniversityInput, RejectInstituteInput } from '../validators/authValidators.js';
@@ -131,6 +132,28 @@ export async function adminInstituteDetail(req: Request, res: Response, next: Ne
   try {
     const profile = await getAdminInstitute(String(req.params.id));
     res.json(ok({ institute: profile }, 'OK'));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function adminInstitutePolicyDocuments(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const documents = await listInstitutePolicyDocuments(String(req.params.id));
+    res.json(ok({ documents }, 'OK'));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function adminInstitutePolicyDocumentDownload(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const admin = requireAdmin(req);
+    const file = await readInstitutePolicyDocument(String(req.params.id), String(req.params.documentId), admin.id, req);
+    const filename = file.filename.replace(/["\r\n]/g, '');
+    res.setHeader('Content-Type', file.mimeType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(file.buffer);
   } catch (error) {
     next(error);
   }

@@ -15,6 +15,7 @@ import { Student } from './models/Student.js';
 import { UploadJob } from './models/UploadJob.js';
 import { hashPassword } from './utils/password.js';
 import { EXCEL_COLUMNS } from './data/studentMaster.js';
+import { POLICY_DOCUMENTS } from './data/insurerPremiumCatalog.js';
 import { assertExcelFileSize } from './config/excelLimits.js';
 import { AppError } from './middleware/errorHandler.js';
 
@@ -341,6 +342,8 @@ test('college student isolation and excel import', async (t) => {
     assert.equal(quoted.body.data.quote.studentCount, 2);
     assert.equal(quoted.body.data.quote.ratePerStudent, 20);
     assert.equal(quoted.body.data.quote.totalPremium, 47.2);
+    assert.equal(quoted.body.data.quote.stampDuty, 3);
+    assert.equal(quoted.body.data.quote.amountPayable, 50.2);
 
     const national = await collegeA.post('/api/college/students/premium-quote').send({
       jobId,
@@ -349,6 +352,7 @@ test('college student isolation and excel import', async (t) => {
     });
     assert.equal(national.status, 200);
     assert.equal(national.body.data.quote.totalPremium, 146.32);
+    assert.equal(national.body.data.quote.amountPayable, 149.32);
 
     const stolen = await collegeB.post('/api/college/students/premium-quote').send({
       jobId,
@@ -357,6 +361,22 @@ test('college student isolation and excel import', async (t) => {
     });
     assert.equal(stolen.status, 404);
 
+    const missingDocs = await collegeA.post('/api/college/students/payment/proceed').send({
+      jobId,
+      insurer: 'NATIONAL',
+      policyType: 'GPA'
+    });
+    assert.equal(missingDocs.status, 400);
+
+    for (const document of POLICY_DOCUMENTS) {
+      const uploaded = await collegeA
+        .post('/api/college/students/policy-documents')
+        .field('jobId', jobId)
+        .field('documentKey', document.key)
+        .attach('file', Buffer.from('%PDF-1.4\n'), `${document.key}.pdf`);
+      assert.equal(uploaded.status, 200);
+    }
+
     const pay = await collegeA.post('/api/college/students/payment/proceed').send({
       jobId,
       insurer: 'NATIONAL',
@@ -364,7 +384,7 @@ test('college student isolation and excel import', async (t) => {
     });
     assert.equal(pay.status, 200);
     assert.equal(pay.body.data.paymentStatus, 'AWAITING_PAYMENT_DETAILS');
-    assert.match(String(pay.body.data.message), /next step/i);
+    assert.match(String(pay.body.data.message), /not switched on/i);
   });
 
   await t.test('student can be viewed edited and deactivated', async () => {

@@ -7,8 +7,9 @@ import { invalidateDashboardCache } from '../analytics/analytics.service.js';
 import { notifyAdmins, notifyInstituteUsers } from '../notifications/notification.service.js';
 import { writeAudit } from '../services/auditService.js';
 import { requireCollegeInstituteId } from '../services/instituteService.js';
-import { loadCollegeUploadJob } from '../services/studentService.js';
+import { assertPolicyDocumentsComplete, importPaidUploadJob, loadCollegeUploadJob } from '../services/studentService.js';
 import type { AuthUser } from '../types/auth.js';
+import { sendCollegePaymentEmails } from './paymentMail.js';
 import { logger } from '../utils/logger.js';
 import { expectedJobAmountPaise } from './amounts.js';
 import { loadGatewayConfig, requireGatewayConfig, type GatewayConfig } from './gatewayConfig.js';
@@ -70,6 +71,7 @@ export async function createCollegePaymentOrder(user: AuthUser, input: { jobId: 
   if (job.validCount < 1) {
     throw new AppError('Validate the Excel file and keep at least one valid student before paying.', 400, 'NO_VALID_ROWS');
   }
+  assertPolicyDocumentsComplete(job);
   const expected = expectedJobAmountPaise(job);
   if (!expected) {
     throw new AppError('Select an insurer and policy type before paying.', 400, 'POLICY_REQUIRED');
@@ -107,7 +109,7 @@ export async function createCollegePaymentOrder(user: AuthUser, input: { jobId: 
       instituteId,
       uploadJobId: job._id,
       createdBy: user.id,
-      amount: quote.totalPremium,
+      amount: quote.amountPayable,
       amountPaise,
       currency: quote.currency,
       status: 'PENDING',
@@ -225,10 +227,29 @@ async function markVerified(payment: PaymentRow, rp: RazorpayPayment, via: strin
       await notifyInstituteUsers(String(updated.instituteId), {
         type: 'PAYMENT_VERIFIED',
         title: 'Payment received',
-        message: 'Your premium payment was received. You can now import the validated students.',
+        message: 'Your premium payment was received. The valid students have been added.',
         relatedEntityType: 'Payment',
         relatedEntityId: String(updated._id),
         actionUrl: '/college/students/upload'
+      });
+    }
+    if (jobMarked && updated.uploadJobId) {
+      try {
+        await importPaidUploadJob(String(updated.uploadJobId), req);
+      } catch (error) {
+        logger.error('payment_student_import_failed', {
+          paymentId: String(updated._id),
+          message: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+    if (jobMarked && updated.instituteId && updated.uploadJobId) {
+      await sendCollegePaymentEmails({
+        instituteId: String(updated.instituteId),
+        uploadJobId: String(updated.uploadJobId),
+        paymentId: String(updated._id),
+        amountPaise: updated.amountPaise,
+        razorpayPaymentId: rp.id
       });
     }
   } catch (error) {
@@ -280,6 +301,16 @@ export async function verifyCollegePayment(
   const payment = await findCollegePayment(user, { razorpayOrderId: input.razorpay_order_id });
   if (payment.status === 'VERIFIED') {
     await ensureJobPaid(payment);
+    if (payment.uploadJobId) {
+      try {
+        await importPaidUploadJob(String(payment.uploadJobId), req);
+      } catch (error) {
+        logger.error('payment_student_import_failed', {
+          paymentId: String(payment._id),
+          message: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
     return toPaymentDto(payment);
   }
 

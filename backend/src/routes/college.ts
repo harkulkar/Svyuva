@@ -20,12 +20,13 @@ import {
   patchCollegeStudent,
   proceedCollegeStudentPayment,
   quoteCollegeStudentPremium,
+  uploadCollegePolicyDocument,
   patchCollegeStudentStatus,
   postCollegeStudent,
   uploadCollegeStudents
 } from '../controllers/studentController.js';
 import { authenticate } from '../middleware/authenticate.js';
-import { excelTimeout, studentExcelUpload } from '../middleware/excelUpload.js';
+import { excelTimeout, policyDocumentFile, studentExcelUpload } from '../middleware/excelUpload.js';
 import { requireRole } from '../middleware/requireRole.js';
 import { validateBody, validateQuery } from '../middleware/validate.js';
 import { ok } from '../utils/apiResponse.js';
@@ -117,6 +118,7 @@ collegeRouter.get('/students/template', collegeStudentTemplate);
 collegeRouter.post('/students/upload', uploadLimiter, excelTimeout, studentExcelUpload, uploadCollegeStudents);
 collegeRouter.get('/students/premium-options', collegeStudentPremiumOptions);
 collegeRouter.post('/students/premium-quote', validateBody(studentPremiumQuoteSchema), quoteCollegeStudentPremium);
+collegeRouter.post('/students/policy-documents', uploadLimiter, policyDocumentFile, uploadCollegePolicyDocument);
 collegeRouter.post('/students/payment/proceed', validateBody(studentPremiumQuoteSchema), proceedCollegeStudentPayment);
 collegeRouter.get('/payments/availability', collegePaymentAvailability);
 collegeRouter.post('/payments/create-order', paymentLimiter, validateBody(createPaymentOrderSchema), collegeCreatePaymentOrder);

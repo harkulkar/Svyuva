@@ -4,6 +4,8 @@ import {
   adminDashboard,
   adminGlobalSearch,
   adminInstituteDetail,
+  adminInstitutePolicyDocumentDownload,
+  adminInstitutePolicyDocuments,
   adminInstitutes,
   adminProfile,
   adminReports,
@@ -228,6 +230,8 @@ adminRouter.get('/institutes/pending', validateQuery(adminInstituteQuerySchema),
 adminRouter.get('/registrations', validateQuery(adminInstituteQuerySchema), pendingInstitutes);
 adminRouter.get('/institutes', validateQuery(adminInstituteQuerySchema), adminInstitutes);
 adminRouter.get('/institutes/:id/timeline', timelineHandler);
+adminRouter.get('/institutes/:id/policy-documents/:documentId/download', adminInstitutePolicyDocumentDownload);
+adminRouter.get('/institutes/:id/policy-documents', adminInstitutePolicyDocuments);
 adminRouter.get('/institutes/:id', adminInstituteDetail);
 adminRouter.patch('/institutes/:id/approve', approveInstituteHandler);
 adminRouter.patch('/institutes/:id/reject', validateBody(rejectInstituteSchema), rejectInstituteHandler);

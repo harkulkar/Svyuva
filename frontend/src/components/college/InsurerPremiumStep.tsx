@@ -7,6 +7,7 @@ import {
   getApiErrorMessage,
   proceedStudentUploadPayment,
   quoteStudentUploadPremium,
+  uploadPolicyDocument,
   verifyPayment
 } from '../../services/api';
 import { openRazorpayCheckout } from '../../utils/razorpayCheckout';
@@ -25,6 +26,17 @@ export const POLICIES: Record<InsurerCode, Array<{ type: PolicyType; label: stri
     { type: 'GMC', label: 'Group Mediclaim (GMC)' }
   ]
 };
+
+export const POLICY_DOCUMENT_FIELDS = [
+  { key: 'GPA_PROPOSAL', label: 'GPA Proposal Form' },
+  { key: 'STUDENT_DATA_SHEET', label: 'Student Data Sheet (Annexure)' },
+  { key: 'PEP_KYC', label: 'Signed & Stamped PEP–KYC' },
+  { key: 'AADHAAR_PAN_SIGNATORY', label: 'Aadhaar & PAN of Authorized Signatory' },
+  { key: 'BML', label: 'BML' },
+  { key: 'COLLEGE_PAN_GST', label: 'College PAN & GST Certificate / NON‑GST Declaration' },
+  { key: 'NOT_NPO_DECLARATION', label: 'College Not‑NPO/NGO Declaration' },
+  { key: 'DCM_MATRIX', label: 'DCM Matrix' }
+] as const;
 
 function money(currency: string, value: number) {
   return `${currency} ${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -52,6 +64,8 @@ export function InsurerPremiumStep({
   const [availability, setAvailability] = useState<PaymentAvailability | null>(null);
   const [paid, setPaid] = useState(false);
   const [pendingPaymentId, setPendingPaymentId] = useState<string | null>(null);
+  const [documents, setDocuments] = useState<Record<string, string>>({});
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,6 +114,22 @@ export function InsurerPremiumStep({
     };
   }, [jobId, insurer, policyType]);
 
+  async function onDocument(key: string, file: File | null) {
+    if (!file) return;
+    setUploadingKey(key);
+    setError(null);
+    try {
+      const result = await uploadPolicyDocument({ jobId, documentKey: key, file });
+      const next: Record<string, string> = {};
+      for (const item of result.documents) next[item.key] = item.filename;
+      setDocuments(next);
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'The document could not be uploaded.'));
+    } finally {
+      setUploadingKey(null);
+    }
+  }
+
   async function confirmPayment(paymentRecordId: string, first: PaymentRecord | null): Promise<PaymentRecord | null> {
     let current = first;
     for (let attempt = 0; attempt < CONFIRM_ATTEMPTS && current?.status !== 'VERIFIED'; attempt += 1) {
@@ -117,7 +147,7 @@ export function InsurerPremiumStep({
     setPaid(true);
     setPendingPaymentId(null);
     setError(null);
-    setPaymentMessage('Payment received. You can now import the valid students.');
+    setPaymentMessage('Payment received. The valid students are being added.');
   }
 
   async function onCheckStatus() {
@@ -177,7 +207,16 @@ export function InsurerPremiumStep({
 
   async function onProceed() {
     if (!insurer || !policyType) return;
-    if (availability?.enabled) {
+    let ready = availability;
+    if (!ready?.enabled) {
+      try {
+        ready = await fetchPaymentAvailability();
+        setAvailability(ready);
+      } catch {
+        ready = availability;
+      }
+    }
+    if (ready?.enabled) {
       await onPayOnline();
       return;
     }
@@ -199,6 +238,8 @@ export function InsurerPremiumStep({
   }
 
   const policies = insurer ? POLICIES[insurer] : [];
+  const documentsReady = POLICY_DOCUMENT_FIELDS.every((item) => documents[item.key]);
+  const payable = quote ? quote.amountPayable ?? quote.totalPremium + (quote.stampDuty ?? 3) : 0;
 
   return (
     <section className="mt-6 border border-slate-300 bg-white p-5">
@@ -243,6 +284,35 @@ export function InsurerPremiumStep({
         </div>
       ) : null}
 
+      {policyType ? (
+        <div className="mt-6">
+          <h3 className="text-base font-semibold text-navy">Upload documents</h3>
+          <p className="mt-1 text-sm text-slate-600">PDF, JPG, or PNG. Each file up to 5 MB.</p>
+          <ul className="mt-3 space-y-3">
+            {POLICY_DOCUMENT_FIELDS.map((item) => (
+              <li key={item.key} className="border border-slate-200 px-3 py-2 text-sm">
+                <label className="block font-medium text-navy" htmlFor={`doc-${item.key}`}>
+                  {item.label}
+                </label>
+                <input
+                  id={`doc-${item.key}`}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                  className="mt-2 block w-full text-sm"
+                  disabled={paid || uploadingKey !== null}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null;
+                    void onDocument(item.key, file);
+                  }}
+                />
+                {documents[item.key] ? <p className="mt-1 text-xs text-green-800">Uploaded: {documents[item.key]}</p> : null}
+                {uploadingKey === item.key ? <p className="mt-1 text-xs text-slate-600">Uploading…</p> : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       {error ? <p className="mt-4 text-sm text-red-800" role="alert">{error}</p> : null}
 
       {quote ? (
@@ -273,9 +343,17 @@ export function InsurerPremiumStep({
               <dt className="text-slate-500">GST ({Math.round(quote.gstRate * 100)}%)</dt>
               <dd>{money(quote.currency, quote.gstAmount)}</dd>
             </div>
-            <div className="sm:col-span-2">
+            <div>
               <dt className="text-slate-500">Total premium</dt>
-              <dd className="text-lg font-semibold text-navy">{money(quote.currency, quote.totalPremium)}</dd>
+              <dd className="font-semibold">{money(quote.currency, quote.totalPremium)}</dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Stamp duty</dt>
+              <dd>{money(quote.currency, quote.stampDuty ?? 3)}</dd>
+            </div>
+            <div className="sm:col-span-2">
+              <dt className="text-slate-500">Total premium + stamp duty</dt>
+              <dd className="text-lg font-semibold text-navy">{money(quote.currency, payable)}</dd>
             </div>
           </dl>
           <p className="mt-2 text-xs text-slate-500">{quote.formula}</p>
@@ -297,15 +375,18 @@ export function InsurerPremiumStep({
           {availability?.mode === 'test' && !paid ? (
             <p className="mt-3 text-xs text-slate-600">Test mode: no real money is charged.</p>
           ) : null}
-          {paid || (paymentMessage && !availability?.enabled) ? null : (
+          {!documentsReady && !paid ? (
+            <p className="mt-3 text-xs text-slate-600">Upload all documents before payment.</p>
+          ) : null}
+          {paid ? null : (
             <button
               type="button"
               className="mt-4 inline-flex min-h-11 items-center gap-2 bg-navy px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-              disabled={busy !== null || availability === null}
+              disabled={busy !== null || availability === null || !documentsReady}
               onClick={() => void onProceed()}
             >
               {busy === 'pay' ? <ButtonSpinner /> : null}
-              {availability?.enabled ? `Pay ${money(quote.currency, quote.totalPremium)} online` : 'Proceed to payment'}
+              {availability?.enabled ? `Pay ${money(quote.currency, payable)} online` : 'Proceed to payment'}
             </button>
           )}
         </div>

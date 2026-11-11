@@ -9,7 +9,9 @@ import { ApprovalPanel } from '../../components/common/ApprovalPanel';
 import { WorkflowTimeline } from '../../components/common/WorkflowTimeline';
 import {
   approveInstituteRequest,
+  downloadAdminInstituteDocument,
   fetchAdminInstitute,
+  fetchAdminInstituteDocuments,
   fetchEntityWorkflow,
   fetchWorkflowHistory,
   getApiErrorMessage,
@@ -18,6 +20,7 @@ import {
   updateInstituteStatusRequest
 } from '../../services/api';
 import type { InstituteProfile } from '../../types/auth';
+import type { InstitutePolicyDocument } from '../../types/student';
 import type { WorkflowHistoryItem, WorkflowRecord } from '../../types/workflow';
 
 export function AdminInstituteDetailPage() {
@@ -31,6 +34,17 @@ export function AdminInstituteDetailPage() {
   const [workflow, setWorkflow] = useState<WorkflowRecord | null>(null);
   const [history, setHistory] = useState<WorkflowHistoryItem[]>([]);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [documents, setDocuments] = useState<InstitutePolicyDocument[] | null>(null);
+  const [documentsError, setDocumentsError] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  function loadDocuments() {
+    if (!id) return;
+    setDocumentsError(null);
+    void fetchAdminInstituteDocuments(id)
+      .then(setDocuments)
+      .catch((err) => setDocumentsError(getApiErrorMessage(err)));
+  }
 
   function load() {
     if (!id) return;
@@ -47,6 +61,7 @@ export function AdminInstituteDetailPage() {
 
   useEffect(() => {
     load();
+    loadDocuments();
   }, [id]);
 
   async function run() {
@@ -143,6 +158,60 @@ export function AdminInstituteDetailPage() {
             {institute.status === 'REJECTED' ? <p className="text-sm text-slate-600">This registration was rejected and is kept on file.</p> : null}
           </div>
         </div>
+      ) : null}
+      {id ? (
+        <section className="mt-6 border border-slate-300 bg-white p-5">
+          <h2 className="text-sm font-semibold text-navy">Uploaded documents</h2>
+          <p className="mt-1 text-sm text-slate-600">Documents this college uploaded with a policy. Download keeps the original file name.</p>
+          {documentsError ? (
+            <div className="mt-3">
+              <ErrorMessage message={documentsError} />
+              <button type="button" className="mt-2 text-sm font-semibold text-navy underline" onClick={loadDocuments}>Retry</button>
+            </div>
+          ) : null}
+          {!documents && !documentsError ? <div className="mt-3"><Loading /></div> : null}
+          {documents && documents.length === 0 ? <p className="mt-3 text-sm text-slate-600">This college has not uploaded documents yet.</p> : null}
+          {documents && documents.length > 0 ? (
+            <div className="mt-3 overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-3 py-2">Document</th>
+                    <th className="px-3 py-2">File</th>
+                    <th className="px-3 py-2">Policy</th>
+                    <th className="px-3 py-2">Uploaded</th>
+                    <th className="px-3 py-2">Download</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {documents.map((item) => (
+                    <tr key={item.id} className="border-t border-slate-200">
+                      <td className="px-3 py-2 font-medium text-navy">{item.label}</td>
+                      <td className="px-3 py-2">{item.filename}</td>
+                      <td className="px-3 py-2">{[item.insurerName, item.policyLabel].filter(Boolean).join(' · ') || '—'}</td>
+                      <td className="px-3 py-2">{item.uploadedAt ? new Date(item.uploadedAt).toLocaleString() : '—'}</td>
+                      <td className="px-3 py-2">
+                        <button
+                          type="button"
+                          className="font-semibold text-navy underline disabled:opacity-60"
+                          disabled={downloadingId === item.id}
+                          onClick={() => {
+                            setDownloadingId(item.id);
+                            void downloadAdminInstituteDocument(id, item.id, item.filename)
+                              .catch((err) => setDocumentsError(getApiErrorMessage(err)))
+                              .finally(() => setDownloadingId(null));
+                          }}
+                        >
+                          {downloadingId === item.id ? 'Downloading…' : 'Download'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </section>
       ) : null}
       {history.length ? (
         <section className="mt-6 border border-slate-300 bg-white p-5">

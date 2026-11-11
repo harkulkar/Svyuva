@@ -10,6 +10,7 @@ import {
   listCollegeStudents,
   quoteCollegeUploadPremium,
   requestCollegeUploadPayment,
+  saveCollegePolicyDocument,
   previewCollegeExcel,
   studentTemplateFile,
   updateCollegeStudent,
@@ -127,6 +128,20 @@ export async function proceedCollegeStudentPayment(req: Request, res: Response, 
     const user = requireCollege(req);
     const result = await requestCollegeUploadPayment(user, req.body, req);
     res.json(ok(result, result.message));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function uploadCollegePolicyDocument(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const user = requireCollege(req);
+    const result = await saveCollegePolicyDocument(
+      user,
+      { jobId: String(req.body.jobId || ''), documentKey: String(req.body.documentKey || ''), file: req.file },
+      req
+    );
+    res.json(ok(result, 'Document uploaded'));
   } catch (error) {
     next(error);
   }

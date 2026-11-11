@@ -1,10 +1,13 @@
 import type { Request } from 'express';
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import mongoose from 'mongoose';
 import { AppError } from '../middleware/errorHandler.js';
 import { escapeRegex } from '../utils/escapeRegex.js';
 import { Institute } from '../models/Institute.js';
 import { Student } from '../models/Student.js';
 import { UploadJob } from '../models/UploadJob.js';
+import { User } from '../models/User.js';
 import { reviewExcelWithAi } from '../ai/validation/excelAi.js';
 import { writeAudit } from './auditService.js';
 import { requireCollegeInstituteId } from './instituteService.js';
@@ -24,7 +27,8 @@ import {
 import { safeUploadFilename } from '../utils/spreadsheet.js';
 import type { AuthUser } from '../types/auth.js';
 import type { AdminStudentListQuery, StudentListQuery, StudentUpdateInput, StudentWriteInput } from '../validators/studentValidators.js';
-import { computeInsurerPremium, insurerPremiumOptions } from '../data/insurerPremiumCatalog.js';
+import { computeInsurerPremium, insurerPremiumOptions, POLICY_DOCUMENTS, type PolicyDocumentKey } from '../data/insurerPremiumCatalog.js';
+import { policyDocumentDir, rememberPolicyDocument } from './policyDocumentStorage.js';
 import { isOnlinePaymentEnabled } from '../payments/gatewayConfig.js';
 
 const LIST_FIELDS =
@@ -555,27 +559,16 @@ async function syncUploadWorkflow(
   );
 }
 
-export async function importCollegeExcel(user: AuthUser, jobId: string, req: Request) {
-  const { instituteId, universityId } = await collegeOwnership(user);
-  if (!mongoose.isValidObjectId(jobId)) {
-    throw new AppError('Upload preview not found', 404, 'NOT_FOUND');
-  }
-  const job = await UploadJob.findOne({ _id: jobId, instituteId });
-  if (!job) {
-    throw new AppError('Upload preview not found', 404, 'NOT_FOUND');
-  }
-  if (job.imported) {
-    throw new AppError('This file has already been imported.', 409, 'ALREADY_IMPORTED');
-  }
-  if (job.expiresAt.getTime() < Date.now()) {
-    throw new AppError('The upload preview has expired. Upload the file again.', 410, 'PREVIEW_EXPIRED');
-  }
-  if (job.paymentStatus !== 'PAID' && (await isOnlinePaymentEnabled())) {
-    throw new AppError('Pay the premium online before importing these students.', 402, 'PAYMENT_REQUIRED');
-  }
-
+async function saveImportedStudents(
+  job: InstanceType<typeof UploadJob>,
+  user: AuthUser,
+  req?: Request
+) {
+  const instituteId = job.instituteId;
+  const universityId = job.universityId;
   const rows = (job.validRows as Array<StudentWriteInput & { sourceRow?: number; dateOfBirth: string | Date }>) ?? [];
   if (!rows.length) {
+    await UploadJob.updateOne({ _id: job._id }, { $set: { imported: false } });
     throw new AppError('There are no valid rows to import.', 400, 'NO_VALID_ROWS');
   }
 
@@ -599,23 +592,29 @@ export async function importCollegeExcel(user: AuthUser, jobId: string, req: Req
       imported = typeof n === 'number' ? n : 0;
     }
     failed = documents.length - imported;
+    if (imported === 0) {
+      await UploadJob.updateOne({ _id: job._id }, { $set: { imported: false } });
+      throw error;
+    }
   }
 
   job.imported = true;
   job.validRows = [];
   await job.save();
 
-  try {
-    await syncUploadWorkflow(
-      user,
-      req,
-      String(job._id),
-      String(instituteId),
-      String(universityId),
-      imported === 0 && failed > 0 ? 'failed' : 'imported'
-    );
-  } catch {
-    /* Import result is already stored. */
+  if (req) {
+    try {
+      await syncUploadWorkflow(
+        user,
+        req,
+        String(job._id),
+        String(instituteId),
+        String(universityId),
+        imported === 0 && failed > 0 ? 'failed' : 'imported'
+      );
+    } catch {
+      /* Import result is already stored. */
+    }
   }
 
   await writeAudit({
@@ -658,6 +657,59 @@ export async function importCollegeExcel(user: AuthUser, jobId: string, req: Req
   };
 }
 
+async function claimUploadForImport(jobId: string, instituteId?: mongoose.Types.ObjectId | string) {
+  const filter: Record<string, unknown> = { _id: jobId, imported: { $ne: true } };
+  if (instituteId) filter.instituteId = instituteId;
+  return UploadJob.findOneAndUpdate(filter, { $set: { imported: true } }, { new: true });
+}
+
+export async function importCollegeExcel(user: AuthUser, jobId: string, req: Request) {
+  const { instituteId } = await collegeOwnership(user);
+  if (!mongoose.isValidObjectId(jobId)) {
+    throw new AppError('Upload preview not found', 404, 'NOT_FOUND');
+  }
+  const existing = await UploadJob.findOne({ _id: jobId, instituteId });
+  if (!existing) {
+    throw new AppError('Upload preview not found', 404, 'NOT_FOUND');
+  }
+  if (existing.imported) {
+    throw new AppError('This file has already been imported.', 409, 'ALREADY_IMPORTED');
+  }
+  if (existing.expiresAt.getTime() < Date.now()) {
+    throw new AppError('The upload preview has expired. Upload the file again.', 410, 'PREVIEW_EXPIRED');
+  }
+  if (existing.paymentStatus !== 'PAID' && (await isOnlinePaymentEnabled())) {
+    throw new AppError('Pay the premium online before importing these students.', 402, 'PAYMENT_REQUIRED');
+  }
+  const job = await claimUploadForImport(jobId, instituteId);
+  if (!job) {
+    throw new AppError('This file has already been imported.', 409, 'ALREADY_IMPORTED');
+  }
+  return saveImportedStudents(job, user, req);
+}
+
+/** Saves the validated students once payment is confirmed. Safe to call more than once. */
+export async function importPaidUploadJob(jobId: string, req?: Request) {
+  if (!mongoose.isValidObjectId(jobId)) return null;
+  const existing = await UploadJob.findById(jobId);
+  if (!existing || existing.imported) return null;
+  const rows = existing.validRows as unknown[];
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  const job = await claimUploadForImport(jobId);
+  if (!job) return null;
+  const uploader = await User.findById(job.uploadedBy).select('name email');
+  const user: AuthUser = {
+    id: String(job.uploadedBy),
+    name: uploader?.name || 'College',
+    email: uploader?.email || '',
+    role: 'COLLEGE',
+    status: 'ACTIVE',
+    instituteId: String(job.instituteId),
+    universityId: String(job.universityId)
+  };
+  return saveImportedStudents(job, user, req);
+}
+
 export async function loadCollegeUploadJob(user: AuthUser, jobId: string) {
   const { instituteId } = await collegeOwnership(user);
   if (!mongoose.isValidObjectId(jobId)) {
@@ -671,6 +723,91 @@ export async function loadCollegeUploadJob(user: AuthUser, jobId: string) {
     throw new AppError('The upload preview has expired. Upload the file again.', 410, 'PREVIEW_EXPIRED');
   }
   return job;
+}
+
+function policyDocumentDto(row: { key: string; originalFilename: string; sizeBytes?: number | null; uploadedAt?: Date | null }) {
+  const known = POLICY_DOCUMENTS.find((item) => item.key === row.key);
+  return {
+    key: row.key,
+    label: known?.label || row.key,
+    filename: row.originalFilename,
+    sizeBytes: row.sizeBytes || 0,
+    uploadedAt: row.uploadedAt ? new Date(row.uploadedAt).toISOString() : null
+  };
+}
+
+export function assertPolicyDocumentsComplete(job: { policyDocuments?: Array<{ key?: string | null }> | null }) {
+  const uploaded = new Set((job.policyDocuments || []).map((item) => item.key).filter(Boolean));
+  const missing = POLICY_DOCUMENTS.filter((item) => !uploaded.has(item.key)).map((item) => item.label);
+  if (missing.length) {
+    throw new AppError(`Upload the remaining documents before payment: ${missing.join(', ')}.`, 400, 'DOCUMENTS_REQUIRED');
+  }
+}
+
+export async function saveCollegePolicyDocument(
+  user: AuthUser,
+  input: { jobId: string; documentKey: string; file: Express.Multer.File | undefined },
+  req?: Request
+) {
+  const known = POLICY_DOCUMENTS.find((item) => item.key === input.documentKey);
+  if (!known) {
+    throw new AppError('Select a valid document type.', 400, 'INVALID_DOCUMENT');
+  }
+  const file = input.file;
+  if (!file?.buffer?.length) {
+    throw new AppError('Select a PDF or image file.', 400, 'NO_FILE');
+  }
+  const name = file.originalname.toLowerCase();
+  const allowed = ['.pdf', '.jpg', '.jpeg', '.png'].some((ext) => name.endsWith(ext));
+  if (!allowed) {
+    throw new AppError('Upload a PDF, JPG, or PNG file.', 400, 'INVALID_FILE_TYPE');
+  }
+  const job = await loadCollegeUploadJob(user, input.jobId);
+  if (job.paymentStatus === 'PAID') {
+    throw new AppError('Payment for this upload is already complete.', 409, 'ALREADY_PAID');
+  }
+  await mkdir(policyDocumentDir, { recursive: true });
+  const ext = path.extname(file.originalname).slice(0, 8).toLowerCase() || '.bin';
+  const storedName = `${String(job._id)}-${known.key}${ext}`;
+  await writeFile(path.join(policyDocumentDir, storedName), file.buffer);
+  const next = (job.policyDocuments || []).filter((item) => item.key !== known.key);
+  next.push({
+    key: known.key as PolicyDocumentKey,
+    originalFilename: safeUploadFilename(file.originalname).slice(0, 180),
+    storedName,
+    mimeType: file.mimetype || '',
+    sizeBytes: file.size,
+    uploadedAt: new Date()
+  });
+  job.policyDocuments = next;
+  await job.save();
+  const quote = job.premiumQuote as { insurerName?: string; policyLabel?: string } | null;
+  await rememberPolicyDocument({
+    instituteId: job.instituteId,
+    uploadJobId: job._id,
+    documentKey: known.key,
+    originalFilename: next[next.length - 1].originalFilename,
+    storedName,
+    mimeType: file.mimetype,
+    sizeBytes: file.size,
+    uploadedAt: next[next.length - 1].uploadedAt,
+    insurer: job.insurer,
+    insurerName: quote?.insurerName,
+    policyType: job.policyType,
+    policyLabel: quote?.policyLabel,
+    uploadFilename: job.filename
+  });
+  if (req) {
+    await writeAudit({
+      userId: user.id,
+      action: 'STUDENT_UPLOAD_POLICY_DOCUMENT',
+      entity: 'UploadJob',
+      entityId: String(job._id),
+      req,
+      metadata: { documentKey: known.key, filename: safeUploadFilename(file.originalname) }
+    });
+  }
+  return { documents: next.map(policyDocumentDto) };
 }
 
 export function collegePremiumOptions() {
@@ -729,6 +866,7 @@ export async function requestCollegeUploadPayment(
 ) {
   const quoted = await quoteCollegeUploadPremium(user, input, req);
   const job = await loadCollegeUploadJob(user, input.jobId);
+  assertPolicyDocumentsComplete(job);
   job.paymentStatus = 'AWAITING_PAYMENT_DETAILS';
   job.paymentRequestedAt = new Date();
   await job.save();
@@ -749,7 +887,7 @@ export async function requestCollegeUploadPayment(
   return {
     quote: quoted.quote,
     paymentStatus: job.paymentStatus,
-    message: 'Premium calculated. Payment details will be collected in the next step.'
+    message: 'Online payment is not switched on yet. An administrator must save the Razorpay keys and enable online payment before this amount can be collected.'
   };
 }
 

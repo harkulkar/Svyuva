@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import test from 'node:test';
 import './config/dns.js';
 import mongoose from 'mongoose';
@@ -12,6 +13,9 @@ import { University } from './models/University.js';
 import { RefreshToken } from './models/RefreshToken.js';
 import { Student } from './models/Student.js';
 import { hashPassword } from './utils/password.js';
+import { UploadJob } from './models/UploadJob.js';
+import { InstitutePolicyDocument } from './models/InstitutePolicyDocument.js';
+import { policyDocumentDir } from './services/policyDocumentStorage.js';
 
 const app = createApp();
 const stamp = Date.now();
@@ -53,6 +57,8 @@ test('admin portal administration', async (t) => {
     const institutes = await Institute.find({ email: collegeEmail });
     await RefreshToken.deleteMany({ userId: { $in: users.map((user) => user._id) } });
     await Student.deleteMany({ instituteId: { $in: institutes.map((row) => row._id) } });
+    await UploadJob.deleteMany({ instituteId: { $in: institutes.map((row) => row._id) } });
+    await InstitutePolicyDocument.deleteMany({ instituteId: { $in: institutes.map((row) => row._id) } });
     await User.deleteMany({ email: { $in: [adminEmail, admin2Email, collegeEmail] } });
     await Institute.deleteMany({ email: collegeEmail });
     await University.deleteMany({ nameNormalized: universityName.toLowerCase() });
@@ -170,6 +176,54 @@ test('admin portal administration', async (t) => {
     const exported = await admin.get('/api/admin/institutes/export?format=csv');
     assert.equal(exported.status, 200);
     assert.match(String(exported.headers['content-type']), /csv/);
+  });
+
+  await t.test('admin can list and download college policy documents', async () => {
+    const jobId = new mongoose.Types.ObjectId();
+    const storedName = `${String(jobId)}-GPA_PROPOSAL.pdf`;
+    await mkdir(policyDocumentDir, { recursive: true });
+    await writeFile(`${policyDocumentDir}/${storedName}`, Buffer.from('%PDF-1.1 admin download'));
+    await UploadJob.create({
+      _id: jobId,
+      instituteId,
+      universityId: university._id,
+      uploadedBy: (await User.findOne({ email: collegeEmail }))!._id,
+      filename: 'students.xlsx',
+      totalRows: 1,
+      validCount: 1,
+      invalidCount: 0,
+      duplicateCount: 0,
+      insurer: 'ICICI',
+      policyType: 'GPA',
+      premiumQuote: { insurerName: 'ICICI Lombard General Insurance Co. Ltd.', policyLabel: 'Group personal accident (GPA)' },
+      policyDocuments: [{
+        key: 'GPA_PROPOSAL',
+        originalFilename: 'proposal.pdf',
+        storedName,
+        mimeType: 'application/pdf',
+        sizeBytes: 24,
+        uploadedAt: new Date()
+      }],
+      expiresAt: new Date(Date.now() + 3600_000)
+    });
+    const listed = await admin.get(`/api/admin/institutes/${instituteId}/policy-documents`);
+    assert.equal(listed.status, 200);
+    assert.equal(listed.body.data.documents.length, 1);
+    assert.equal(listed.body.data.documents[0].label, 'GPA Proposal Form');
+    const documentId = listed.body.data.documents[0].id as string;
+    const college = request.agent(app);
+    await User.updateOne({ email: collegeEmail }, { $set: { status: 'ACTIVE' } });
+    await college.post('/api/auth/login').send({ email: collegeEmail, password });
+    assert.equal((await college.get(`/api/admin/institutes/${instituteId}/policy-documents/${documentId}/download`)).status, 403);
+    const downloaded = await admin.get(`/api/admin/institutes/${instituteId}/policy-documents/${documentId}/download`);
+    assert.equal(downloaded.status, 200);
+    assert.match(String(downloaded.headers['content-disposition']), /proposal\.pdf/);
+    const body = Buffer.isBuffer(downloaded.body) ? downloaded.body.toString() : String(downloaded.text ?? downloaded.body);
+    assert.match(body, /admin download/);
+    await UploadJob.deleteOne({ _id: jobId });
+    const stillThere = await admin.get(`/api/admin/institutes/${instituteId}/policy-documents`);
+    assert.equal(stillThere.body.data.documents.length, 1);
+    await unlink(`${policyDocumentDir}/${storedName}`);
   });
 
   await t.test('password change and last admin protection', async () => {

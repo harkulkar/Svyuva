@@ -1,3 +1,5 @@
+import nodemailer from 'nodemailer';
+import mongoose from 'mongoose';
 import { env } from '../config/env.js';
 import { EmailLog } from '../models/EmailLog.js';
 import { logger } from '../utils/logger.js';
@@ -7,18 +9,43 @@ import { getOperationalSettings } from '../settings/settings.service.js';
 let failedSends = 0;
 let lastFailureAt: string | null = null;
 
+export type EmailAttachment = {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+};
+
 export type SendEmailInput = {
   to: string;
+  cc?: string | string[];
   subject: string;
   text: string;
+  attachments?: EmailAttachment[];
   template?: string;
   notificationType?: string;
   relatedEntityType?: string;
   relatedEntityId?: string;
+  /** Business mail such as a paid-premium pack. Still requires SMTP. */
+  required?: boolean;
 };
 
 function transportReady(): boolean {
-  return env.EMAIL_PROVIDER === 'smtp' && Boolean(env.SMTP_HOST);
+  return Boolean(env.SMTP_HOST);
+}
+
+let transport: nodemailer.Transporter | null = null;
+
+function mailer() {
+  if (!transport) {
+    const port = env.SMTP_PORT || 587;
+    transport = nodemailer.createTransport({
+      host: env.SMTP_HOST,
+      port,
+      secure: port === 465,
+      auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined
+    });
+  }
+  return transport;
 }
 
 export function isEmailTransportConfigured(): boolean {
@@ -26,6 +53,7 @@ export function isEmailTransportConfigured(): boolean {
 }
 
 async function persistLog(input: SendEmailInput, status: 'skipped' | 'sent' | 'failed', errorCode = '') {
+  if (mongoose.connection.readyState !== 1) return;
   try {
     await EmailLog.create({
       recipient: input.to.slice(0, 200),
@@ -48,9 +76,14 @@ async function persistLog(input: SendEmailInput, status: 'skipped' | 'sent' | 'f
 
 export const emailService = {
   async sendEmail(input: SendEmailInput): Promise<{ status: 'skipped' | 'sent' | 'failed'; errorCode?: string }> {
-    const settings = await getOperationalSettings();
-    const enabled = settings.emailEnabled && env.EMAIL_ENABLED !== false;
-    if (!enabled || !input.to) {
+    if (!input.required) {
+      const settings = await getOperationalSettings();
+      const enabled = settings.emailEnabled && env.EMAIL_ENABLED !== false;
+      if (!enabled || !input.to) {
+        await persistLog(input, 'skipped', 'EMAIL_DISABLED');
+        return { status: 'skipped', errorCode: 'EMAIL_DISABLED' };
+      }
+    } else if (!input.to) {
       await persistLog(input, 'skipped', 'EMAIL_DISABLED');
       return { status: 'skipped', errorCode: 'EMAIL_DISABLED' };
     }
@@ -65,11 +98,29 @@ export const emailService = {
       }
       return { status: 'skipped', errorCode: 'SMTP_NOT_CONFIGURED' };
     }
-    failedSends += 1;
-    lastFailureAt = new Date().toISOString();
-    await persistLog(input, 'failed', 'TRANSPORT_NOT_IMPLEMENTED');
-    logger.warn('email_send_failed', { reason: 'transport_not_implemented', retryCount: 0 });
-    return { status: 'failed', errorCode: 'TRANSPORT_NOT_IMPLEMENTED' };
+    try {
+      await mailer().sendMail({
+        from: env.SMTP_FROM || env.SMTP_USER || 'info@svyuvasuraksha.org',
+        to: input.to,
+        cc: input.cc || undefined,
+        subject: input.subject,
+        text: input.text,
+        attachments: (input.attachments || []).map((file) => ({
+          filename: file.filename,
+          content: file.content,
+          contentType: file.contentType
+        }))
+      });
+      await persistLog(input, 'sent');
+      return { status: 'sent' };
+    } catch (error) {
+      failedSends += 1;
+      lastFailureAt = new Date().toISOString();
+      const message = error instanceof Error ? error.message : 'send_failed';
+      await persistLog(input, 'failed', message.slice(0, 80));
+      logger.error('email_send_failed', { reason: message, retryCount: 0 });
+      return { status: 'failed', errorCode: 'SEND_FAILED' };
+    }
   },
 
   async sendTemplateEmail(input: {
@@ -145,7 +196,7 @@ export const emailService = {
   stats() {
     return {
       transportConfigured: transportReady(),
-      implementation: transportReady() ? 'host_set_transport_not_implemented' : 'not_configured',
+      implementation: transportReady() ? 'nodemailer' : 'not_configured',
       provider: env.EMAIL_PROVIDER,
       failedSends,
       lastFailureAt
