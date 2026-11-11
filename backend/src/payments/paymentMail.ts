@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import { POLICY_DOCUMENTS } from '../data/insurerPremiumCatalog.js';
 import { env } from '../config/env.js';
 import { Institute } from '../models/Institute.js';
+import { University } from '../models/University.js';
 import { InstitutePolicyDocument } from '../models/InstitutePolicyDocument.js';
 import { UploadJob } from '../models/UploadJob.js';
 import { buildStudentDataWorkbook } from '../services/excelService.js';
@@ -39,7 +40,7 @@ export async function sendCollegePaymentEmails(input: {
   }
 
   const [institute, job] = await Promise.all([
-    Institute.findById(input.instituteId).select('name email universityName'),
+    Institute.findById(input.instituteId).select('name email universityId'),
     UploadJob.findById(input.uploadJobId)
   ]);
   if (!job) {
@@ -102,10 +103,11 @@ export async function sendCollegePaymentEmails(input: {
   }
 
   const instituteName = institute?.name || 'College';
+  const university = institute?.universityId ? await University.findById(institute.universityId).select('name') : null;
   const amount = money(input.amountPaise);
   const summary = [
     `College: ${instituteName}`,
-    institute?.universityName ? `University: ${institute.universityName}` : '',
+    university?.name ? `University: ${university.name}` : '',
     institute?.email ? `College email: ${institute.email}` : '',
     `Insurer: ${insurerName || '—'}`,
     `Policy: ${policyLabel || '—'}`,
@@ -116,7 +118,7 @@ export async function sendCollegePaymentEmails(input: {
 
   const collegeEmail = institute?.email?.trim() || '';
   const result = await emailService.sendEmail({
-    to: collegeEmail || PAYMENT_NOTICE_CC[0],
+    to: collegeEmail || PAYMENT_NOTICE_CC[0] || 'info@svyuvasuraksha.org',
     cc: collegeEmail ? PAYMENT_NOTICE_CC : PAYMENT_NOTICE_CC.slice(1),
     subject: `Payment confirmation — ${instituteName}`,
     text: [

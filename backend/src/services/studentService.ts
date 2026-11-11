@@ -27,7 +27,7 @@ import {
 import { safeUploadFilename } from '../utils/spreadsheet.js';
 import type { AuthUser } from '../types/auth.js';
 import type { AdminStudentListQuery, StudentListQuery, StudentUpdateInput, StudentWriteInput } from '../validators/studentValidators.js';
-import { computeInsurerPremium, insurerPremiumOptions, POLICY_DOCUMENTS, type PolicyDocumentKey } from '../data/insurerPremiumCatalog.js';
+import { computeInsurerPremium, insurerPremiumOptions, POLICY_DOCUMENTS } from '../data/insurerPremiumCatalog.js';
 import { policyDocumentDir, rememberPolicyDocument } from './policyDocumentStorage.js';
 import { isOnlinePaymentEnabled } from '../payments/gatewayConfig.js';
 
@@ -770,27 +770,37 @@ export async function saveCollegePolicyDocument(
   const ext = path.extname(file.originalname).slice(0, 8).toLowerCase() || '.bin';
   const storedName = `${String(job._id)}-${known.key}${ext}`;
   await writeFile(path.join(policyDocumentDir, storedName), file.buffer);
-  const next = (job.policyDocuments || []).filter((item) => item.key !== known.key);
-  next.push({
-    key: known.key as PolicyDocumentKey,
+  const uploaded = {
+    key: known.key,
     originalFilename: safeUploadFilename(file.originalname).slice(0, 180),
     storedName,
     mimeType: file.mimetype || '',
     sizeBytes: file.size,
     uploadedAt: new Date()
-  });
-  job.policyDocuments = next;
+  };
+  const kept = (job.policyDocuments || []).filter((item) => item.key !== known.key);
+  job.set('policyDocuments', [
+    ...kept.map((item) => ({
+      key: item.key,
+      originalFilename: item.originalFilename,
+      storedName: item.storedName,
+      mimeType: item.mimeType,
+      sizeBytes: item.sizeBytes,
+      uploadedAt: item.uploadedAt
+    })),
+    uploaded
+  ]);
   await job.save();
   const quote = job.premiumQuote as { insurerName?: string; policyLabel?: string } | null;
   await rememberPolicyDocument({
     instituteId: job.instituteId,
     uploadJobId: job._id,
     documentKey: known.key,
-    originalFilename: next[next.length - 1].originalFilename,
+    originalFilename: uploaded.originalFilename,
     storedName,
     mimeType: file.mimetype,
     sizeBytes: file.size,
-    uploadedAt: next[next.length - 1].uploadedAt,
+    uploadedAt: uploaded.uploadedAt,
     insurer: job.insurer,
     insurerName: quote?.insurerName,
     policyType: job.policyType,
@@ -807,7 +817,7 @@ export async function saveCollegePolicyDocument(
       metadata: { documentKey: known.key, filename: safeUploadFilename(file.originalname) }
     });
   }
-  return { documents: next.map(policyDocumentDto) };
+  return { documents: (job.policyDocuments || []).map(policyDocumentDto) };
 }
 
 export function collegePremiumOptions() {

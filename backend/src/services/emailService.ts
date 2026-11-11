@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import nodemailer, { type Transporter } from 'nodemailer';
 import mongoose from 'mongoose';
 import { env } from '../config/env.js';
 import { EmailLog } from '../models/EmailLog.js';
@@ -33,7 +33,7 @@ function transportReady(): boolean {
   return Boolean(env.SMTP_HOST);
 }
 
-let transport: nodemailer.Transporter | null = null;
+let transport: Transporter | null = null;
 
 function mailer() {
   if (!transport) {
