@@ -28,11 +28,11 @@ export const POLICIES: Record<InsurerCode, Array<{ type: PolicyType; label: stri
 };
 
 export const POLICY_DOCUMENT_FIELDS = [
-  { key: 'GPA_PROPOSAL', label: 'GPA Proposal Form' },
+  { key: 'GPA_PROPOSAL', label: 'GPA Proposal Form', formatHref: '/assets/documents/formats/GPA-Proposal-Form.pdf', formatName: 'GPA-Proposal-Form.pdf' },
   { key: 'STUDENT_DATA_SHEET', label: 'Student Data Sheet (Annexure)' },
-  { key: 'PEP_KYC', label: 'Signed & Stamped PEP–KYC' },
+  { key: 'PEP_KYC', label: 'Signed & Stamped PEP–KYC', formatHref: '/assets/documents/formats/Signed-Stamped-PEP-KYC.pdf', formatName: 'Signed-Stamped-PEP-KYC.pdf' },
   { key: 'AADHAAR_PAN_SIGNATORY', label: 'Aadhaar & PAN of Authorized Signatory' },
-  { key: 'BML', label: 'BML' },
+  { key: 'BML', label: 'BML', formatHref: '/assets/documents/formats/BML.pdf', formatName: 'BML.pdf' },
   { key: 'COLLEGE_PAN_GST', label: 'College PAN & GST Certificate / NON‑GST Declaration' },
   { key: 'NOT_NPO_DECLARATION', label: 'College Not‑NPO/NGO Declaration' },
   { key: 'DCM_MATRIX', label: 'DCM Matrix' }
@@ -294,6 +294,11 @@ export function InsurerPremiumStep({
                 <label className="block font-medium text-navy" htmlFor={`doc-${item.key}`}>
                   {item.label}
                 </label>
+                {'formatHref' in item ? (
+                  <a className="mt-1 inline-block text-sm font-semibold text-navy underline" href={item.formatHref} download={item.formatName}>
+                    Download format
+                  </a>
+                ) : null}
                 <input
                   id={`doc-${item.key}`}
                   type="file"
