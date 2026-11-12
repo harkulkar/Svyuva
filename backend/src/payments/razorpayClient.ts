@@ -63,8 +63,12 @@ async function call<T>(creds: RazorpayCredentials, method: 'GET' | 'POST', path:
     logger.error('razorpay_api_error', {
       method,
       status: response.status,
+      statusText: response.statusText,
+      contentType: response.headers.get('content-type'),
+      razorpayRequestId: response.headers.get('x-razorpay-request-id'),
       errorCode: json.error?.code ?? null,
-      description: (json.error?.description ?? '').slice(0, 300)
+      description: (json.error?.description ?? '').slice(0, 300),
+      rawResponse: text.slice(0, 1000)
     });
 
     throw new AppError(
