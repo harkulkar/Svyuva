@@ -1,4 +1,4 @@
-/** TODO: VERIFY AGAINST OFFICIAL STUDENT FORMAT */
+/** Official college upload headings from SVYSY_Student_Upload_Template.xlsx */
 
 export const STUDENT_GENDERS = ['Male', 'Female', 'Other'] as const;
 export const STUDENT_YEARS = ['First Year', 'Second Year', 'Third Year', 'Fourth Year'] as const;
@@ -8,35 +8,27 @@ export const STUDENT_STATUSES = ['ACTIVE', 'INACTIVE'] as const;
 export const PARENT_RELATIONS = ['Father', 'Mother'] as const;
 
 export const EXCEL_COLUMNS = [
-  'Sr No',
-  'Student ID No',
-  'Student Name',
-  'Parent Name',
-  "Student's DOB",
-  "Parent's DOB (Optional)",
+  'Sr No.',
+  'Student ID',
+  'Name of Insured',
+  'DOB',
   'Age',
-  'Parent -Age',
-  'Student Gender',
-  'Father/Mother',
-  "Student's Mail Id",
-  "Student's Mobile No"
+  'Gender',
+  'Relation to',
+  'Relation',
+  'Location',
+  'DOJ',
+  'DOC',
+  'Sum Insured',
+  'Email ID',
+  'Mobile No.'
 ] as const;
 
-export const EXCEL_REQUIRED_COLUMNS = [
-  'Sr No',
-  'Student ID No',
-  'Student Name',
-  'Parent Name',
-  "Student's DOB",
-  'Student Gender',
-  'Father/Mother',
-  "Student's Mail Id",
-  "Student's Mobile No"
-] as const;
+export const EXCEL_REQUIRED_COLUMNS = EXCEL_COLUMNS;
 
 export function studentMasterData() {
   return {
-    verification: 'TODO: VERIFY AGAINST OFFICIAL STUDENT FORMAT',
+    verification: 'Official SVYSY student upload template',
     genders: [...STUDENT_GENDERS],
     years: [...STUDENT_YEARS],
     semesters: [...STUDENT_SEMESTERS],

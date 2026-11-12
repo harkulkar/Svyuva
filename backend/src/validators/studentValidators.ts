@@ -98,6 +98,24 @@ export const studentWriteSchema = z
     serialNumber: optionalText,
     age: z.number().int().min(0).max(120).optional().nullable(),
     parentAge: z.number().int().min(0).max(120).optional().nullable(),
+    relation: optionalText,
+    dateOfJoining: z
+      .union([z.string(), z.date(), z.literal('')])
+      .optional()
+      .transform((value) => {
+        if (value == null || value === '') return undefined;
+        return value instanceof Date ? value : new Date(value);
+      })
+      .refine((value) => value == null || !Number.isNaN(value.getTime()), 'Enter a valid date of joining'),
+    dateOfCommencement: z
+      .union([z.string(), z.date(), z.literal('')])
+      .optional()
+      .transform((value) => {
+        if (value == null || value === '') return undefined;
+        return value instanceof Date ? value : new Date(value);
+      })
+      .refine((value) => value == null || !Number.isNaN(value.getTime()), 'Enter a valid date of commencement'),
+    sumInsured: z.number().min(0).max(100000000).optional().nullable(),
     category: optionalEnum(STUDENT_CATEGORIES, 'Select a valid category'),
     status: enumField(STUDENT_STATUSES, 'Select a valid status').optional()
   })

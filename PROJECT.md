@@ -221,22 +221,24 @@ Both use the **same template and parser**. They are different products:
 
 ### Template columns
 
-Headings only (no sample student rows). **TODO: VERIFY AGAINST OFFICIAL STUDENT FORMAT.**
+Headings only (no sample student rows). Official headings from `SVYSY_Student_Upload_Template.xlsx`.
 
 | Column | Required |
 |--------|----------|
-| Sr No | Yes (also used as roll number) |
-| Student ID No | Yes (also stored as enrollment number) |
-| Student Name | Yes (split into first / middle / last) |
-| Parent Name | Yes |
-| Student's DOB | Yes |
-| Parent's DOB (Optional) | No |
-| Age | No (computed from student DOB if blank) |
-| Parent -Age | No (not cross-checked against parent DOB) |
-| Student Gender | Yes (`Male` / `Female` / `Other`) |
-| Father/Mother | Yes (`Father` / `Mother`) |
-| Student's Mail Id | Yes |
-| Student's Mobile No | Yes (10-digit Indian mobile) |
+| Sr No. | Yes (also used as roll number) |
+| Student ID | Yes (also stored as enrollment number) |
+| Name of Insured | Yes (split into first / middle / last) |
+| DOB | Yes |
+| Age | No (computed from DOB if blank; a mismatch of more than one year is invalid) |
+| Gender | Yes (`Male` / `Female` / `Other`) |
+| Relation to | No |
+| Relation | No (`Father` or `Mother` is also stored as the parent relation) |
+| Location | No |
+| DOJ | No |
+| DOC | No |
+| Sum Insured | No |
+| Email ID | No |
+| Mobile No. | Yes (10-digit Indian mobile) |
 
 Course, year of study, and academic year are **not** on the sheet. Import stores course as `Not specified`, year as `First Year`, and academic year from the college year (roster) or the submission year (scheme pack).
 

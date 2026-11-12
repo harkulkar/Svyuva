@@ -126,7 +126,7 @@ export function CollegeSubmissionUploadPage() {
       {submission?.locked ? <p className="mt-2 text-sm font-medium">Submitted on: {submission.submittedAt ? new Date(submission.submittedAt).toLocaleString() : ''}</p> : null}
       {error ? <PageError message={error} /> : null}
       <p className="mt-2 text-sm text-slate-700">
-        Template columns: Sr No, Student ID No, Student Name, Parent Name, Student's DOB, Parent's DOB (Optional), Age, Parent -Age, Student Gender, Father/Mother, Student's Mail Id, Student's Mobile No.
+        Template columns: Sr No., Student ID, Name of Insured, DOB, Age, Gender, Relation to, Relation, Location, DOJ, DOC, Sum Insured, Email ID, Mobile No.
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" className="min-h-11 border border-navy px-3 text-navy" onClick={() => void downloadStudentTemplate()}>

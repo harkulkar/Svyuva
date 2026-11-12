@@ -61,18 +61,20 @@ function workbookBuffer(rows: unknown[][], headers: unknown[] = [...EXCEL_COLUMN
 
 function excelRow(_academicYear: string, suffix: string, overrides: Partial<Record<string, string>> = {}) {
   const base: Record<string, string> = {
-    'Sr No': `${stamp}-${suffix}`,
-    'Student ID No': `SID-${stamp}-${suffix}`,
-    'Student Name': 'Ravi Deshmukh',
-    'Parent Name': 'Parent Patil',
-    "Student's DOB": '2003-01-20',
-    "Parent's DOB (Optional)": '',
+    'Sr No.': `${stamp}-${suffix}`,
+    'Student ID': `SID-${stamp}-${suffix}`,
+    'Name of Insured': 'Ravi Deshmukh',
+    DOB: '2003-01-20',
     Age: '',
-    'Parent -Age': '',
-    'Student Gender': 'Male',
-    'Father/Mother': 'Father',
-    "Student's Mail Id": `ravi.${stamp}.${suffix}@example.com`,
-    "Student's Mobile No": '9876502222',
+    Gender: 'Male',
+    'Relation to': 'Parent Patil',
+    Relation: 'Father',
+    Location: '',
+    DOJ: '',
+    DOC: '',
+    'Sum Insured': '',
+    'Email ID': `ravi.${stamp}.${suffix}@example.com`,
+    'Mobile No.': '9876502222',
     ...overrides
   };
   return EXCEL_COLUMNS.map((column) => base[column] ?? '');

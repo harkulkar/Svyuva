@@ -87,15 +87,15 @@ test('excel parser validates headers, rows, and duplicates', () => {
   }
   const validRow = EXCEL_COLUMNS.map((column) => {
     const map: Record<string, string> = {
-      'Sr No': '1',
-      'Student ID No': 'S1',
-      'Student Name': 'Ravi Patil',
-      'Parent Name': 'Suresh Patil',
-      "Student's DOB": '2004-01-01',
-      'Student Gender': 'Male',
-      'Father/Mother': 'Father',
-      "Student's Mail Id": 'ravi.patil@example.com',
-      "Student's Mobile No": '9876501111'
+      'Sr No.': '1',
+      'Student ID': 'S1',
+      'Name of Insured': 'Ravi Patil',
+      DOB: '2004-01-01',
+      Gender: 'Male',
+      Relation: 'Father',
+      'Relation to': 'Suresh Patil',
+      'Email ID': 'ravi.patil@example.com',
+      'Mobile No.': '9876501111'
     };
     return map[column] || '';
   });
@@ -108,17 +108,15 @@ test('excel parser validates headers, rows, and duplicates', () => {
   const dup = parseStudentWorkbook(book([...EXCEL_COLUMNS], [validRow, validRow]));
   assert.equal(dup.duplicateCount >= 1, true);
   const badMobile = [...validRow];
-  const mobileIdx = EXCEL_COLUMNS.indexOf("Student's Mobile No");
+  const mobileIdx = EXCEL_COLUMNS.indexOf('Mobile No.');
   badMobile[mobileIdx] = '123';
   const invalid = parseStudentWorkbook(book([...EXCEL_COLUMNS], [badMobile]));
   assert.equal(invalid.invalidCount >= 1, true);
-  assert.equal(invalid.issues[0]?.field, "Student's Mobile No");
-  const parentMismatch = [...validRow];
-  parentMismatch[EXCEL_COLUMNS.indexOf("Parent's DOB (Optional)")] = '1968-01-01';
-  parentMismatch[EXCEL_COLUMNS.indexOf('Parent -Age')] = '40';
-  const parentOptional = parseStudentWorkbook(book([...EXCEL_COLUMNS], [parentMismatch]));
-  assert.equal(parentOptional.validRows.length, 1);
-  assert.equal(parentOptional.invalidCount, 0);
+  assert.equal(invalid.issues[0]?.field, 'Mobile No.');
+  const ageMismatch = [...validRow];
+  ageMismatch[EXCEL_COLUMNS.indexOf('Age')] = '40';
+  const mismatched = parseStudentWorkbook(book([...EXCEL_COLUMNS], [ageMismatch]));
+  assert.equal(mismatched.invalidCount >= 1, true);
   const template = XLSX.read(buildStudentTemplate(), { type: 'buffer' });
   const matrix = XLSX.utils.sheet_to_json<unknown[]>(template.Sheets.Students as XLSX.WorkSheet, { header: 1 });
   assert.equal(matrix.length, 1);

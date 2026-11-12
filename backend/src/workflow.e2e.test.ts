@@ -142,18 +142,20 @@ test('Phase 9 workflows 1–3: signup, approval, students, excel', async (t) => 
 
   await t.test('workflow 3: excel upload, preview, import, and verify', async () => {
     const row: Record<string, string> = {
-      'Sr No': `WFXR-${stamp}`,
-      'Student ID No': `WFXL-${stamp}`,
-      'Student Name': 'Kiran More',
-      'Parent Name': 'Parent More',
-      "Student's DOB": '2003-08-01',
-      "Parent's DOB (Optional)": '',
+      'Sr No.': `WFXR-${stamp}`,
+      'Student ID': `WFXL-${stamp}`,
+      'Name of Insured': 'Kiran More',
+      DOB: '2003-08-01',
       Age: '',
-      'Parent -Age': '',
-      'Student Gender': 'Male',
-      'Father/Mother': 'Father',
-      "Student's Mail Id": `kiran.${stamp}@example.com`,
-      "Student's Mobile No": '9876504444'
+      Gender: 'Male',
+      'Relation to': 'Parent More',
+      Relation: 'Father',
+      Location: '',
+      DOJ: '',
+      DOC: '',
+      'Sum Insured': '',
+      'Email ID': `kiran.${stamp}@example.com`,
+      'Mobile No.': '9876504444'
     };
     const sheet = XLSX.utils.aoa_to_sheet([[...EXCEL_COLUMNS], EXCEL_COLUMNS.map((column) => row[column] ?? '')]);
     const workbook = XLSX.utils.book_new();

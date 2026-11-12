@@ -101,7 +101,7 @@ export function CollegeUploadStudentsPage() {
         This page does not include a spreadsheet editor.
       </p>
       <p className="mt-2 text-sm text-slate-700">
-        Template columns: Sr No, Student ID No, Student Name, Parent Name, Student's DOB, Parent's DOB (Optional), Age, Parent -Age, Student Gender, Father/Mother, Student's Mail Id, Student's Mobile No.
+        Template columns: Sr No., Student ID, Name of Insured, DOB, Age, Gender, Relation to, Relation, Location, DOJ, DOC, Sum Insured, Email ID, Mobile No.
       </p>
       <div className="mt-4">
         <button type="button" className="border border-navy px-3 py-2 text-sm font-semibold text-navy" onClick={() => void downloadStudentTemplate()}>
@@ -176,7 +176,7 @@ export function CollegeUploadStudentsPage() {
                 <thead className="bg-slate-50">
                   <tr>
                     <th className="px-3 py-2">Row</th>
-                    <th className="px-3 py-2">Student ID No</th>
+                    <th className="px-3 py-2">Student ID</th>
                     <th className="px-3 py-2">Student Name</th>
                     <th className="px-3 py-2">Gender</th>
                     <th className="px-3 py-2">Mobile No</th>

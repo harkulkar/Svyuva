@@ -194,7 +194,7 @@ export async function getSubmissionMeta(user: AuthUser) {
     institute: { id: String(institute._id), name: institute.name, district: institute.district || '' },
     university: uni,
     academicYears: years,
-    excelNote: 'TODO: VERIFY AGAINST OFFICIAL STUDENT FORMAT',
+    excelNote: 'Use the official student upload template: Sr No., Student ID, Name of Insured, DOB, Age, Gender, Relation to, Relation, Location, DOJ, DOC, Sum Insured, Email ID, Mobile No.',
     premiumNote: 'TODO: VERIFY OFFICIAL PREMIUM RULE'
   };
 }

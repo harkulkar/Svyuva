@@ -85,18 +85,20 @@ function workbookBuffer(rows: unknown[][], headers: unknown[] = [...EXCEL_COLUMN
 
 function validExcelRow(overrides: Partial<Record<string, string>> = {}) {
   const base: Record<string, string> = {
-    'Sr No': `XR-${stamp}-1`,
-    'Student ID No': `XL-${stamp}-1`,
-    'Student Name': 'Ravi Deshmukh',
-    'Parent Name': 'Parent Patil',
-    "Student's DOB": '2003-01-20',
-    "Parent's DOB (Optional)": '',
+    'Sr No.': `XR-${stamp}-1`,
+    'Student ID': `XL-${stamp}-1`,
+    'Name of Insured': 'Ravi Deshmukh',
+    DOB: '2003-01-20',
     Age: '',
-    'Parent -Age': '',
-    'Student Gender': 'Male',
-    'Father/Mother': 'Father',
-    "Student's Mail Id": `ravi.${stamp}@example.com`,
-    "Student's Mobile No": '9876502222',
+    Gender: 'Male',
+    'Relation to': 'Parent Patil',
+    Relation: 'Father',
+    Location: '',
+    DOJ: '',
+    DOC: '',
+    'Sum Insured': '',
+    'Email ID': `ravi.${stamp}@example.com`,
+    'Mobile No.': '9876502222',
     ...overrides
   };
   return EXCEL_COLUMNS.map((column) => base[column] ?? '');
@@ -260,15 +262,15 @@ test('college student isolation and excel import', async (t) => {
     const rows = [
       validExcelRow(),
       validExcelRow({
-        'Student ID No': `XL-${stamp}-2`,
-        'Sr No': `XR-${stamp}-2`,
-        "Student's Mail Id": `ravi2.${stamp}@example.com`,
-        "Student's Mobile No": '12345'
+        'Student ID': `XL-${stamp}-2`,
+        'Sr No.': `XR-${stamp}-2`,
+        'Email ID': `ravi2.${stamp}@example.com`,
+        'Mobile No.': '12345'
       }),
       validExcelRow({
-        'Student ID No': `XL-${stamp}-1`,
-        'Sr No': `XR-${stamp}-3`,
-        "Student's Mail Id": `ravi3.${stamp}@example.com`
+        'Student ID': `XL-${stamp}-1`,
+        'Sr No.': `XR-${stamp}-3`,
+        'Email ID': `ravi3.${stamp}@example.com`
       })
     ];
     const buffer = workbookBuffer(rows);
@@ -295,9 +297,9 @@ test('college student isolation and excel import', async (t) => {
   await t.test('college A cannot import using college B job id', async () => {
     const buffer = workbookBuffer([
       validExcelRow({
-        'Student ID No': `XL-${stamp}-B2`,
-        'Sr No': `XR-${stamp}-B2`,
-        "Student's Mail Id": `ravib.${stamp}@example.com`
+        'Student ID': `XL-${stamp}-B2`,
+        'Sr No.': `XR-${stamp}-B2`,
+        'Email ID': `ravib.${stamp}@example.com`
       })
     ]);
     const preview = await collegeB.post('/api/college/students/upload').attach('file', buffer, 'students.xlsx');
@@ -309,16 +311,16 @@ test('college student isolation and excel import', async (t) => {
   await t.test('after validate college quotes insurer premium then proceeds to payment', async () => {
     const buffer = workbookBuffer([
       validExcelRow({
-        'Student ID No': `XL-${stamp}-P1`,
-        'Sr No': `XR-${stamp}-P1`,
-        "Student's Mail Id": `ravip1.${stamp}@example.com`,
-        "Student's Mobile No": '9876502222'
+        'Student ID': `XL-${stamp}-P1`,
+        'Sr No.': `XR-${stamp}-P1`,
+        'Email ID': `ravip1.${stamp}@example.com`,
+        'Mobile No.': '9876502222'
       }),
       validExcelRow({
-        'Student ID No': `XL-${stamp}-P2`,
-        'Sr No': `XR-${stamp}-P2`,
-        "Student's Mail Id": `ravip2.${stamp}@example.com`,
-        "Student's Mobile No": '9876503333'
+        'Student ID': `XL-${stamp}-P2`,
+        'Sr No.': `XR-${stamp}-P2`,
+        'Email ID': `ravip2.${stamp}@example.com`,
+        'Mobile No.': '9876503333'
       })
     ]);
     const preview = await collegeA.post('/api/college/students/upload').attach('file', buffer, 'students.xlsx');

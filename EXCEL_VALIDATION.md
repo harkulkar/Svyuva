@@ -1,16 +1,16 @@
 # Excel validation
 
-Columns match the college student Excel template (`EXCEL_COLUMNS` / `EXCEL_REQUIRED_COLUMNS`): Sr No, Student ID No, Student Name, Parent Name, Student's DOB, Parent's DOB (Optional), Age, Parent -Age, Student Gender, Father/Mother, Student's Mail Id, Student's Mobile No. **TODO: VERIFY AGAINST OFFICIAL STUDENT FORMAT.** The template is headings + notes only (no sample student rows).
+Columns match the college student Excel template (`EXCEL_COLUMNS`): Sr No., Student ID, Name of Insured, DOB, Age, Gender, Relation to, Relation, Location, DOJ, DOC, Sum Insured, Email ID, Mobile No. Every heading must be present. The template is headings + notes only (no sample student rows).
 
 ## Server checks
 
 - Type (`.xlsx` / `.xls`) and size (`MAX_EXCEL_FILE_SIZE_MB`)
 - Parse workbook; required headers; unexpected columns rejected
-- Row required fields and types (Zod `studentWriteSchema`), with Student Name split into first/middle/last
-- In-file duplicates: Student ID No; Sr No
+- Row required fields and types (Zod `studentWriteSchema`), with Name of Insured split into first/middle/last
+- In-file duplicates: Student ID; Sr No.
 - Database duplicates using Student ID / enrollment / roll indexes, excluding rows already tied to **this** submission
 - Academic year is taken from the college year or the submission year (the sheet has no Academic Year column)
-- Age may be blank; it is calculated from Student's DOB when possible. Parent's DOB and Parent -Age are optional and are not cross-checked.
+- Cells that must be filled: Sr No., Student ID, Name of Insured, DOB, Gender, and Mobile No. Age may be blank; it is calculated from DOB when possible. Relation to, Relation, Location, DOJ, DOC, Sum Insured, and Email ID may be blank. An Age that disagrees with DOB by more than one year is invalid.
 - Formula-like cells are sanitized
 
 ## Result shown to the college

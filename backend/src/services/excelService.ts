@@ -104,35 +104,36 @@ function canonicalHeader(raw: string): string {
   const normalized = normalizeHeader(raw);
   const key = headerKey(normalized);
   const aliases: Record<string, (typeof EXCEL_COLUMNS)[number]> = {
-    'sr no': 'Sr No',
-    srno: 'Sr No',
-    'serial no': 'Sr No',
-    'student id no': 'Student ID No',
-    'student id': 'Student ID No',
-    'student name': 'Student Name',
-    'parent name': 'Parent Name',
-    'students dob': "Student's DOB",
-    'student dob': "Student's DOB",
-    'parents dob optional': "Parent's DOB (Optional)",
-    'parents dob': "Parent's DOB (Optional)",
-    'parent dob': "Parent's DOB (Optional)",
+    'sr no': 'Sr No.',
+    'sr no.': 'Sr No.',
+    srno: 'Sr No.',
+    'serial no': 'Sr No.',
+    'student id': 'Student ID',
+    'student id no': 'Student ID',
+    'name of insured': 'Name of Insured',
+    'student name': 'Name of Insured',
+    dob: 'DOB',
+    'students dob': 'DOB',
+    'student dob': 'DOB',
     age: 'Age',
-    'parent age': 'Parent -Age',
-    parentage: 'Parent -Age',
-    'student gender': 'Student Gender',
-    gender: 'Student Gender',
-    'father mother': 'Father/Mother',
-    fathermother: 'Father/Mother',
-    'students mail id': "Student's Mail Id",
-    'student mail id': "Student's Mail Id",
-    'students email': "Student's Mail Id",
-    email: "Student's Mail Id",
-    'students mobile no': "Student's Mobile No",
-    'student mobile no': "Student's Mobile No",
-    'studentsmobile no': "Student's Mobile No",
-    'studentsmobileno': "Student's Mobile No",
-    mobile: "Student's Mobile No",
-    'mobile no': "Student's Mobile No"
+    gender: 'Gender',
+    'student gender': 'Gender',
+    'relation to': 'Relation to',
+    relation: 'Relation',
+    'father mother': 'Relation',
+    location: 'Location',
+    doj: 'DOJ',
+    'date of joining': 'DOJ',
+    doc: 'DOC',
+    'date of commencement': 'DOC',
+    'sum insured': 'Sum Insured',
+    'email id': 'Email ID',
+    email: 'Email ID',
+    'students mail id': 'Email ID',
+    'mobile no': 'Mobile No.',
+    'mobile no.': 'Mobile No.',
+    mobile: 'Mobile No.',
+    'students mobile no': 'Mobile No.'
   };
   if (aliases[key]) return aliases[key];
   const official = EXCEL_COLUMNS.find((column) => headerKey(column) === key);
@@ -195,22 +196,25 @@ export function ageInYears(dob: Date, on = new Date()): number {
 }
 
 const COLUMN_BY_FIELD: Record<string, string> = {
-  studentId: 'Student ID No',
-  enrollmentNumber: 'Student ID No',
-  rollNumber: 'Sr No',
-  serialNumber: 'Sr No',
-  firstName: 'Student Name',
-  middleName: 'Student Name',
-  lastName: 'Student Name',
-  gender: 'Student Gender',
-  dateOfBirth: "Student's DOB",
-  mobile: "Student's Mobile No",
-  email: "Student's Mail Id",
-  parentName: 'Parent Name',
-  parentRelation: 'Father/Mother',
-  parentDateOfBirth: "Parent's DOB (Optional)",
+  studentId: 'Student ID',
+  enrollmentNumber: 'Student ID',
+  rollNumber: 'Sr No.',
+  serialNumber: 'Sr No.',
+  firstName: 'Name of Insured',
+  middleName: 'Name of Insured',
+  lastName: 'Name of Insured',
+  gender: 'Gender',
+  dateOfBirth: 'DOB',
+  mobile: 'Mobile No.',
+  email: 'Email ID',
+  parentName: 'Relation to',
+  parentRelation: 'Relation',
+  relation: 'Relation',
+  address: 'Location',
+  dateOfJoining: 'DOJ',
+  dateOfCommencement: 'DOC',
+  sumInsured: 'Sum Insured',
   age: 'Age',
-  parentAge: 'Parent -Age',
   course: 'Course',
   year: 'Year',
   academicYear: 'Academic Year'
@@ -238,6 +242,10 @@ export function studentDocumentFromParsedRow(row: StudentWriteInput) {
     parentMobile: row.parentMobile || '',
     parentRelation: row.parentRelation || '',
     parentDateOfBirth: row.parentDateOfBirth ? new Date(row.parentDateOfBirth) : null,
+    relation: row.relation || '',
+    dateOfJoining: row.dateOfJoining ? new Date(row.dateOfJoining) : null,
+    dateOfCommencement: row.dateOfCommencement ? new Date(row.dateOfCommencement) : null,
+    sumInsured: row.sumInsured ?? null,
     serialNumber: row.serialNumber || '',
     age: row.age ?? null,
     parentAge: row.parentAge ?? null,
@@ -251,21 +259,21 @@ export function serializeExcelValidRows(rows: ParsedStudentRow[]) {
     ...row,
     dateOfBirth: row.dateOfBirth instanceof Date ? row.dateOfBirth.toISOString() : row.dateOfBirth,
     parentDateOfBirth:
-      row.parentDateOfBirth instanceof Date ? row.parentDateOfBirth.toISOString() : row.parentDateOfBirth
+      row.parentDateOfBirth instanceof Date ? row.parentDateOfBirth.toISOString() : row.parentDateOfBirth,
+    dateOfJoining: row.dateOfJoining instanceof Date ? row.dateOfJoining.toISOString() : row.dateOfJoining,
+    dateOfCommencement:
+      row.dateOfCommencement instanceof Date ? row.dateOfCommencement.toISOString() : row.dateOfCommencement
   }));
 }
 
 export function buildStudentTemplate(): Buffer {
   const notes = [
-    ['TODO: VERIFY AGAINST OFFICIAL STUDENT FORMAT'],
+    ['Use these column headings exactly: Sr No., Student ID, Name of Insured, DOB, Age, Gender, Relation to, Relation, Location, DOJ, DOC, Sum Insured, Email ID, Mobile No.'],
     ['This template contains column headings and notes only. It does not include sample student rows.'],
-    [
-      "Columns: Sr No, Student ID No, Student Name, Parent Name, Student's DOB, Parent's DOB (Optional), Age, Parent -Age, Student Gender, Father/Mother, Student's Mail Id, Student's Mobile No"
-    ],
     ['Institute and university are taken from the signed-in college account. Do not add those columns.'],
-    [`Student Gender: ${STUDENT_GENDERS.join(', ')}`],
-    [`Father/Mother: ${PARENT_RELATIONS.join(', ')}`],
-    ['Dates: YYYY-MM-DD or DD/MM/YYYY. Age may be left blank and is calculated from Student\'s DOB when possible. Parent\'s DOB and Parent -Age are optional and are not cross-checked.'],
+    [`Gender: ${STUDENT_GENDERS.join(', ')}`],
+    ['Dates (DOB, DOJ, DOC): YYYY-MM-DD or DD/MM/YYYY. Age may be left blank and is calculated from DOB when possible.'],
+    ['Relation to, Relation, Location, DOJ, DOC, Sum Insured, and Email ID may be left blank.'],
     [
       `Course, year of study, and academic year are not in this sheet. Imported course is stored as "${EXCEL_DEFAULT_COURSE}", year as ${EXCEL_DEFAULT_YEAR}, and academic year from the college year or the submission year.`
     ]
@@ -301,13 +309,15 @@ export function buildStudentDataWorkbook(rows: Array<Record<string, unknown>>): 
     row.serialNumber || row.rollNumber || '',
     row.studentId || row.enrollmentNumber || '',
     sheetStudentName(row),
-    row.parentName || '',
     sheetDate(row.dateOfBirth),
-    sheetDate(row.parentDateOfBirth),
     row.age ?? '',
-    row.parentAge ?? '',
     row.gender || '',
-    row.parentRelation || '',
+    row.parentName || '',
+    row.relation || row.parentRelation || '',
+    row.address || '',
+    sheetDate(row.dateOfJoining),
+    sheetDate(row.dateOfCommencement),
+    row.sumInsured ?? '',
     row.email || '',
     row.mobile || ''
   ]);
@@ -393,17 +403,21 @@ export function parseStudentWorkbook(buffer: Buffer, options?: ParseStudentWorkb
   body.forEach((cells, index) => {
     const excelRow = index + 2;
     const mapped = rowMap(headers, cells);
-    const studentId = cellToString(mapped['Student ID No']);
-    const serialNumber = cellToString(mapped['Sr No']);
-    const names = splitStudentName(cellToString(mapped['Student Name']));
-    const studentDob = cellToDate(mapped["Student's DOB"]);
-    const parentDobRaw = mapped["Parent's DOB (Optional)"];
-    const parentDobText = cellToString(parentDobRaw);
-    const parentDob = cellToDate(parentDobRaw);
+    const studentId = cellToString(mapped['Student ID']);
+    const serialNumber = cellToString(mapped['Sr No.']);
+    const names = splitStudentName(cellToString(mapped['Name of Insured']));
+    const studentDob = cellToDate(mapped['DOB']);
+    const joiningRaw = mapped['DOJ'];
+    const joiningText = cellToString(joiningRaw);
+    const joining = cellToDate(joiningRaw);
+    const commencementRaw = mapped['DOC'];
+    const commencementText = cellToString(commencementRaw);
+    const commencement = cellToDate(commencementRaw);
     const providedAge = cellToNumber(mapped['Age']);
-    const providedParentAge = cellToNumber(mapped['Parent -Age']);
     const computedAge = studentDob ? ageInYears(studentDob) : undefined;
-    const computedParentAge = parentDob ? ageInYears(parentDob) : undefined;
+    const relation = cellToString(mapped['Relation']);
+    const parentRelation = normalizeParentRelation(relation);
+    const sumInsured = cellToNumber(mapped['Sum Insured']);
 
     const payload: Record<string, unknown> = {
       studentId,
@@ -413,27 +427,28 @@ export function parseStudentWorkbook(buffer: Buffer, options?: ParseStudentWorkb
       firstName: names.firstName,
       middleName: names.middleName,
       lastName: names.lastName,
-      gender: normalizeGender(cellToString(mapped['Student Gender'])),
-      dateOfBirth: studentDob ?? cellToString(mapped["Student's DOB"]),
-      mobile: normalizeMobile(cellToString(mapped["Student's Mobile No"])),
-      email: cellToString(mapped["Student's Mail Id"]).toLowerCase(),
+      gender: normalizeGender(cellToString(mapped['Gender'])),
+      dateOfBirth: studentDob ?? cellToString(mapped['DOB']),
+      mobile: normalizeMobile(cellToString(mapped['Mobile No.'])),
+      email: cellToString(mapped['Email ID']).toLowerCase(),
       course: EXCEL_DEFAULT_COURSE,
       stream: '',
       year: EXCEL_DEFAULT_YEAR,
       semester: '',
       academicYear,
-      address: '',
-      parentName: cellToString(mapped['Parent Name']),
+      address: cellToString(mapped['Location']),
+      parentName: cellToString(mapped['Relation to']),
       parentMobile: '',
-      parentRelation: normalizeParentRelation(cellToString(mapped['Father/Mother'])),
+      parentRelation: (PARENT_RELATIONS as readonly string[]).includes(parentRelation) ? parentRelation : '',
+      relation,
       category: '',
       status: 'ACTIVE',
       age: providedAge ?? computedAge ?? null,
-      parentAge: providedParentAge ?? computedParentAge ?? null
+      parentAge: null,
+      sumInsured: sumInsured ?? null
     };
-    if (parentDob) {
-      payload.parentDateOfBirth = parentDob;
-    }
+    if (joining) payload.dateOfJoining = joining;
+    if (commencement) payload.dateOfCommencement = commencement;
 
     const pushIssue = (field: string, message: string, kind: ExcelIssue['kind'] = 'invalid') => {
       issues.push({
@@ -446,39 +461,27 @@ export function parseStudentWorkbook(buffer: Buffer, options?: ParseStudentWorkb
     };
 
     if (!serialNumber) {
-      pushIssue('Sr No', 'Sr No is required.');
+      pushIssue('Sr No.', 'Sr No. is required.');
       return;
     }
-    if (!cellToString(mapped['Student Name'])) {
-      pushIssue('Student Name', 'Student Name is required.');
-      return;
-    }
-    if (!cellToString(mapped['Parent Name'])) {
-      pushIssue('Parent Name', 'Parent Name is required.');
-      return;
-    }
-    if (!cellToString(mapped["Student's Mail Id"])) {
-      pushIssue("Student's Mail Id", "Student's Mail Id is required.");
-      return;
-    }
-    if (!payload.parentRelation) {
-      pushIssue('Father/Mother', 'Select Father or Mother.');
-      return;
-    }
-    if (!(PARENT_RELATIONS as readonly string[]).includes(String(payload.parentRelation))) {
-      pushIssue('Father/Mother', 'Select Father or Mother.');
+    if (!cellToString(mapped['Name of Insured'])) {
+      pushIssue('Name of Insured', 'Name of Insured is required.');
       return;
     }
     if (!(STUDENT_YEARS as readonly string[]).includes(EXCEL_DEFAULT_YEAR)) {
       pushIssue('Year', 'Year of study could not be set.');
       return;
     }
-    if (parentDobText && !parentDob) {
-      pushIssue("Parent's DOB (Optional)", 'Enter a valid parent date of birth.');
+    if (joiningText && !joining) {
+      pushIssue('DOJ', 'Enter a valid date of joining.');
+      return;
+    }
+    if (commencementText && !commencement) {
+      pushIssue('DOC', 'Enter a valid date of commencement.');
       return;
     }
     if (providedAge != null && computedAge != null && Math.abs(providedAge - computedAge) > 1) {
-      pushIssue('Age', `Age does not match Student's DOB (expected about ${computedAge}).`);
+      pushIssue('Age', `Age does not match DOB (expected about ${computedAge}).`);
       return;
     }
 
@@ -504,8 +507,8 @@ export function parseStudentWorkbook(buffer: Buffer, options?: ParseStudentWorkb
       issues.push({
         row: excelRow,
         identifier: record.studentId,
-        field: 'Student ID No',
-        message: `Student ID No is duplicated in this file (also on row ${studentIds.get(sidKey)}).`,
+        field: 'Student ID',
+        message: `Student ID is duplicated in this file (also on row ${studentIds.get(sidKey)}).`,
         kind: 'duplicate'
       });
       return;
@@ -514,8 +517,8 @@ export function parseStudentWorkbook(buffer: Buffer, options?: ParseStudentWorkb
       issues.push({
         row: excelRow,
         identifier: record.rollNumber,
-        field: 'Sr No',
-        message: `Sr No is duplicated in this file (also on row ${serials.get(serialKey)}).`,
+        field: 'Sr No.',
+        message: `Sr No. is duplicated in this file (also on row ${serials.get(serialKey)}).`,
         kind: 'duplicate'
       });
       return;
