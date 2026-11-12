@@ -1,4 +1,5 @@
 import { AppError } from '../middleware/errorHandler.js';
+import { logger } from '../utils/logger.js';
 
 const BASE_URL = 'https://api.razorpay.com/v1';
 const TIMEOUT_MS = 15000;
@@ -59,7 +60,18 @@ async function call<T>(creds: RazorpayCredentials, method: 'GET' | 'POST', path:
     throw new AppError('The payment gateway rejected the Key ID / Key Secret.', 400, 'GATEWAY_AUTH_FAILED');
   }
   if (!response.ok) {
-    throw new AppError(json.error?.description || 'The payment gateway returned an error.', 502, 'GATEWAY_ERROR');
+    logger.error('razorpay_api_error', {
+      method,
+      status: response.status,
+      errorCode: json.error?.code ?? null,
+      description: (json.error?.description ?? '').slice(0, 300)
+    });
+
+    throw new AppError(
+      json.error?.description || 'The payment gateway returned an error.',
+      502,
+      'GATEWAY_ERROR'
+    );
   }
   return json as T;
 }
