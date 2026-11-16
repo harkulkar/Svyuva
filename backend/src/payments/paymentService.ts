@@ -65,6 +65,13 @@ export async function createCollegePaymentOrder(user: AuthUser, input: { jobId: 
   if (job.paymentStatus === 'PAID') {
     throw new AppError('Payment for this upload is already complete.', 409, 'ALREADY_PAID');
   }
+  if (job.insurer === 'NATIONAL') {
+    throw new AppError(
+      'National Insurance Co. Ltd. payment process is not available. Please contact 9136712289 / info@svyuvasuraksha.org',
+      400,
+      'NATIONAL_PAYMENT_UNAVAILABLE'
+    );
+  }
   if (job.imported) {
     throw new AppError('This file has already been imported.', 409, 'ALREADY_IMPORTED');
   }

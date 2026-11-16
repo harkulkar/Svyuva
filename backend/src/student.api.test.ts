@@ -359,9 +359,9 @@ test('college student isolation and excel import', async (t) => {
       insurer: 'NATIONAL',
       policyType: 'GPA'
     });
-    assert.equal(national.status, 200);
-    assert.equal(national.body.data.quote.totalPremium, 146.32);
-    assert.equal(national.body.data.quote.amountPayable, 149.32);
+    assert.equal(national.status, 400);
+    assert.equal(national.body.code, 'NATIONAL_PAYMENT_UNAVAILABLE');
+    assert.match(String(national.body.message), /9136712289/);
 
     const stolen = await collegeB.post('/api/college/students/premium-quote').send({
       jobId,
@@ -372,7 +372,7 @@ test('college student isolation and excel import', async (t) => {
 
     const missingDocs = await collegeA.post('/api/college/students/payment/proceed').send({
       jobId,
-      insurer: 'NATIONAL',
+      insurer: 'ICICI',
       policyType: 'GPA'
     });
     assert.equal(missingDocs.status, 400);
@@ -388,7 +388,7 @@ test('college student isolation and excel import', async (t) => {
 
     const pay = await collegeA.post('/api/college/students/payment/proceed').send({
       jobId,
-      insurer: 'NATIONAL',
+      insurer: 'ICICI',
       policyType: 'GPA'
     });
     assert.equal(pay.status, 200);

@@ -842,6 +842,13 @@ export async function quoteCollegeUploadPremium(
   if (job.paymentStatus === 'PAID') {
     throw new AppError('Payment for this upload is already complete, so the policy cannot be changed.', 409, 'ALREADY_PAID');
   }
+  if (input.insurer === 'NATIONAL') {
+    throw new AppError(
+      'National Insurance Co. Ltd. payment process is not available. Please contact 9136712289 / info@svyuvasuraksha.org',
+      400,
+      'NATIONAL_PAYMENT_UNAVAILABLE'
+    );
+  }
   if (job.validCount < 1) {
     throw new AppError('Validate the Excel file and keep at least one valid student before selecting a policy.', 400, 'NO_VALID_ROWS');
   }

@@ -19,6 +19,9 @@ export const INSURERS: Array<{ code: InsurerCode; name: string }> = [
   { code: 'ICICI', name: 'ICICI Lombard General Insurance Co. Ltd.' }
 ];
 
+export const NATIONAL_PAYMENT_UNAVAILABLE =
+  'National Insurance Co. Ltd. payment process is not available. Please contact 9136712289 / info@svyuvasuraksha.org';
+
 export const POLICIES: Record<InsurerCode, Array<{ type: PolicyType; label: string }>> = {
   NATIONAL: [{ type: 'GPA', label: 'Group personal accident (GPA)' }],
   ICICI: [
@@ -92,7 +95,7 @@ export function InsurerPremiumStep({
   }, [insurer]);
 
   useEffect(() => {
-    if (!insurer || !policyType) return;
+    if (!insurer || insurer === 'NATIONAL' || !policyType) return;
     let cancelled = false;
     setBusy('quote');
     setError(null);
@@ -237,7 +240,8 @@ export function InsurerPremiumStep({
     return null;
   }
 
-  const policies = insurer ? POLICIES[insurer] : [];
+  const nationalUnavailable = insurer === 'NATIONAL';
+  const policies = insurer && !nationalUnavailable ? POLICIES[insurer] : [];
   const documentsReady = POLICY_DOCUMENT_FIELDS.every((item) => documents[item.key]);
   const payable = quote ? quote.amountPayable ?? quote.totalPremium + (quote.stampDuty ?? 3) : 0;
 
@@ -262,7 +266,13 @@ export function InsurerPremiumStep({
         ))}
       </fieldset>
 
-      {insurer ? (
+      {nationalUnavailable ? (
+        <p className="mt-4 border border-saffron bg-amber-50 px-3 py-2 text-sm text-navy" role="status">
+          {NATIONAL_PAYMENT_UNAVAILABLE}
+        </p>
+      ) : null}
+
+      {insurer && !nationalUnavailable ? (
         <div className="mt-6">
           <h3 className="text-base font-semibold text-navy">Policy type</h3>
           <fieldset className="mt-3 space-y-2">
