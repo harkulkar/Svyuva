@@ -6,6 +6,7 @@ const uploadJobSchema = new Schema(
     universityId: { type: Schema.Types.ObjectId, ref: 'University', required: true },
     uploadedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     filename: { type: String, required: true, trim: true },
+    sourceStoredName: { type: String, trim: true, default: '' },
     totalRows: { type: Number, required: true },
     validCount: { type: Number, required: true },
     invalidCount: { type: Number, required: true },

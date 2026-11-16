@@ -44,6 +44,7 @@ uploads/
 tmp/
 temp/
 backend/storage/knowledge/
+backend/storage/student-uploads/
 
 # Migration generated artefacts (may contain production identifiers after a real run)
 migration/reports/*.json

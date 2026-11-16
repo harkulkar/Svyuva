@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile, unlink } from 'node:fs/promises';
 import test from 'node:test';
 import './config/dns.js';
 import mongoose from 'mongoose';
@@ -18,6 +19,7 @@ import { EXCEL_COLUMNS } from './data/studentMaster.js';
 import { POLICY_DOCUMENTS } from './data/insurerPremiumCatalog.js';
 import { assertExcelFileSize } from './config/excelLimits.js';
 import { AppError } from './middleware/errorHandler.js';
+import { studentUploadFilePath } from './services/studentUploadStorage.js';
 
 const app = createApp();
 const stamp = Date.now();
@@ -281,6 +283,11 @@ test('college student isolation and excel import', async (t) => {
     assert.ok(preview.body.data.invalid >= 1);
     assert.ok(preview.body.data.duplicates >= 1);
     const jobId = preview.body.data.jobId as string;
+    const stored = await UploadJob.findById(jobId).select('sourceStoredName');
+    assert.ok(stored?.sourceStoredName);
+    const savedFile = await readFile(studentUploadFilePath(stored.sourceStoredName));
+    assert.equal(savedFile.equals(buffer), true);
+    await unlink(studentUploadFilePath(stored.sourceStoredName));
 
     const imported = await collegeA.post('/api/college/students/import').send({ jobId });
     assert.equal(imported.status, 200);

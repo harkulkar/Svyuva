@@ -10,6 +10,7 @@ import { UploadJob } from '../models/UploadJob.js';
 import { buildStudentDataWorkbook } from '../services/excelService.js';
 import { emailService, type EmailAttachment } from '../services/emailService.js';
 import { policyDocumentFilePath } from '../services/policyDocumentStorage.js';
+import { studentUploadFilePath } from '../services/studentUploadStorage.js';
 import { logger } from '../utils/logger.js';
 
 export const PAYMENT_NOTICE_CC = [
@@ -54,13 +55,32 @@ export async function sendCollegePaymentEmails(input: {
   const rows = Array.isArray(job.validRows) ? (job.validRows as Array<Record<string, unknown>>) : [];
   const attachments: EmailAttachment[] = [
     {
-      filename: 'students.xlsx',
+      filename: 'valid-students.xlsx',
       content: buildStudentDataWorkbook(rows),
       contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     }
   ];
   const missing: string[] = [];
-  const used = new Set<string>(['students.xlsx']);
+  const used = new Set<string>(['valid-students.xlsx']);
+  const uploadedName = safeFilename(job.filename || 'students.xlsx');
+  let collegeUploadName = safeFilename(`college-upload-${uploadedName}`);
+  if (used.has(collegeUploadName.toLowerCase())) {
+    collegeUploadName = safeFilename(`college-upload-${String(job._id)}-${uploadedName}`);
+  }
+  if (job.sourceStoredName) {
+    try {
+      attachments.push({
+        filename: collegeUploadName,
+        content: await readFile(studentUploadFilePath(job.sourceStoredName)),
+        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      used.add(collegeUploadName.toLowerCase());
+    } catch {
+      missing.push('Student data uploaded by the college');
+    }
+  } else {
+    missing.push('Student data uploaded by the college');
+  }
   const seenKeys = new Set<string>();
   const archived = await InstitutePolicyDocument.find({ uploadJobId: job._id }).select(
     'documentKey label originalFilename storedName mimeType'
@@ -126,7 +146,7 @@ export async function sendCollegePaymentEmails(input: {
       '',
       ...summary,
       '',
-      'The student data sheet and the documents uploaded by the college are attached.',
+      'The valid student data sheet, the student file uploaded by the college, and the documents uploaded by the college are attached.',
       ...(missing.length ? [`These documents could not be attached because the file was missing: ${missing.join(', ')}.`] : []),
       '',
       'This message is sent to the college for confirmation, with a copy to the nodal office and the insurer.'

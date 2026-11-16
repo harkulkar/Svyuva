@@ -29,6 +29,7 @@ import type { AuthUser } from '../types/auth.js';
 import type { AdminStudentListQuery, StudentListQuery, StudentUpdateInput, StudentWriteInput } from '../validators/studentValidators.js';
 import { computeInsurerPremium, insurerPremiumOptions, POLICY_DOCUMENTS } from '../data/insurerPremiumCatalog.js';
 import { policyDocumentDir, rememberPolicyDocument } from './policyDocumentStorage.js';
+import { saveCollegeStudentUpload } from './studentUploadStorage.js';
 import { isOnlinePaymentEnabled } from '../payments/gatewayConfig.js';
 
 const LIST_FIELDS =
@@ -477,6 +478,14 @@ export async function previewCollegeExcel(user: AuthUser, file: Express.Multer.F
     imported: false,
     expiresAt
   });
+  try {
+    job.sourceStoredName = await saveCollegeStudentUpload(String(job._id), file.originalname, file.buffer);
+    await job.save();
+  } catch (error) {
+    await UploadJob.deleteOne({ _id: job._id });
+    if (error instanceof AppError) throw error;
+    throw new AppError('The student file could not be stored.', 500, 'UPLOAD_STORE_FAILED');
+  }
 
   await writeAudit({
     userId: user.id,
