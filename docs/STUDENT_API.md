@@ -83,7 +83,7 @@ Downloads `SVYSY_Student_Upload_Template.xlsx`.
 Limits (environment):
 
 - `MAX_EXCEL_FILE_SIZE_MB` (default 5)
-- `MAX_EXCEL_ROWS` (default 2000)
+- `MAX_EXCEL_ROWS` (default 10000)
 - `MAX_EXCEL_PARSE_MS` (default 60000)
 
 Response includes `jobId`, `totalRows`, `valid`, `invalid`, `duplicates`, `issues`, and a short `preview`.

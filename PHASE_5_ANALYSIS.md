@@ -134,7 +134,7 @@ Excel: memory parse only; original file not stored in MongoDB. Parsed valid rows
 
 ## 9. Import process
 
-1. Multer, size `MAX_EXCEL_FILE_SIZE_MB` (default 5), rows `MAX_EXCEL_ROWS` (default 2000).
+1. Multer, size `MAX_EXCEL_FILE_SIZE_MB` (default 5), rows `MAX_EXCEL_ROWS` (default 10000).
 2. First sheet, exact template headers; extra/missing/duplicate columns rejected.
 3. Row validation + file-level and DB duplicate detection.
 4. Preview counts; user confirms import.

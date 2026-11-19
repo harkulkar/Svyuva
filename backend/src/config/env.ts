@@ -44,7 +44,7 @@ const envSchema = z.object({
     .optional()
     .transform((value) => value === 'true'),
   MAX_EXCEL_FILE_SIZE_MB: z.coerce.number().positive().max(20).default(5),
-  MAX_EXCEL_ROWS: z.coerce.number().int().positive().max(20000).default(2000),
+  MAX_EXCEL_ROWS: z.coerce.number().int().positive().max(20000).default(10000),
   MAX_EXCEL_PARSE_MS: z.coerce.number().int().positive().max(180000).default(60000),
   MAX_EXPORT_ROWS: z.coerce.number().int().positive().max(50000).default(5000),
   LEGACY_DATABASE_URL: z.string().optional().default(''),
