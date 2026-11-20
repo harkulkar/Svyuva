@@ -269,7 +269,8 @@ export function serializeExcelValidRows(rows: ParsedStudentRow[]) {
 export function buildStudentTemplate(): Buffer {
   const notes = [
     ['Use these column headings exactly: Sr No., Student ID, Name of Insured, DOB, Age, Gender, Relation to, Relation, Location, DOJ, DOC, Sum Insured, Email ID, Mobile No.'],
-    ['This template contains column headings and notes only. It does not include sample student rows.'],
+    ['The Students sheet below includes sample rows. Replace the sample values with your own data before uploading.'],
+    ['Each student can have two rows: one for the student and one for a parent. Repeat the Sr No. for the parent row.'],
     ['Institute and university are taken from the signed-in college account. Do not add those columns.'],
     [`Gender: ${STUDENT_GENDERS.join(', ')}`],
     ['Dates (DOB, DOJ, DOC): YYYY-MM-DD or DD/MM/YYYY. Age may be left blank and is calculated from DOB when possible.'],
@@ -278,8 +279,14 @@ export function buildStudentTemplate(): Buffer {
       `Course, year of study, and academic year are not in this sheet. Imported course is stored as "${EXCEL_DEFAULT_COURSE}", year as ${EXCEL_DEFAULT_YEAR}, and academic year from the college year or the submission year.`
     ]
   ];
+  const sampleRows = [
+    ['1', '', 'student name', '', '', '', 'student', 'self', '', '', '', '', '', ''],
+    ['1', '', 'parent name', '', '', '', 'mother/father', 'self', '', '', '', '', '', ''],
+    ['2', '', 'student name', '', '', '', 'student', 'self', '', '', '', '', '', ''],
+    ['2', '', 'parent name', '', '', '', 'mother/father', 'self', '', '', '', '', '', '']
+  ];
   const workbook = XLSX.utils.book_new();
-  const sheet = XLSX.utils.aoa_to_sheet([[...EXCEL_COLUMNS]]);
+  const sheet = XLSX.utils.aoa_to_sheet([[...EXCEL_COLUMNS], ...sampleRows]);
   const noteSheet = XLSX.utils.aoa_to_sheet(notes);
   XLSX.utils.book_append_sheet(workbook, sheet, 'Students');
   XLSX.utils.book_append_sheet(workbook, noteSheet, 'Notes');

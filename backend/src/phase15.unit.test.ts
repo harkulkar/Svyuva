@@ -119,6 +119,8 @@ test('excel parser validates headers, rows, and duplicates', () => {
   assert.equal(mismatched.invalidCount >= 1, true);
   const template = XLSX.read(buildStudentTemplate(), { type: 'buffer' });
   const matrix = XLSX.utils.sheet_to_json<unknown[]>(template.Sheets.Students as XLSX.WorkSheet, { header: 1 });
-  assert.equal(matrix.length, 1);
+  assert.equal(matrix.length, 5);
   assert.deepEqual(matrix[0], [...EXCEL_COLUMNS]);
+  assert.equal((matrix[1] as unknown[])[2], 'student name');
+  assert.equal((matrix[2] as unknown[])[2], 'parent name');
 });
