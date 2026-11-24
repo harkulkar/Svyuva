@@ -67,7 +67,7 @@ export function AdminStudentsPage() {
         <button type="button" className="border border-navy px-3 py-1 text-sm text-navy" onClick={() => void downloadAdminExport('students', { q, academicYear, course, status, universityId, instituteId }, 'xlsx')}>Export Excel</button>
       </div>
       <div className="mt-4">
-        <DebouncedSearchField value={q} onDebouncedChange={(next) => update({ q: next })} label="Search students" placeholder="Search ID, enrollment, name, mobile, email" />
+        <DebouncedSearchField value={q} onDebouncedChange={(next) => update({ q: next })} label="Search students" placeholder="Search ID, enrollment, name, mobile, email, institute" />
       </div>
       <FilterPanel open={filtersOpen} onOpen={() => setFiltersOpen(true)} onClose={() => setFiltersOpen(false)} onSubmit={() => filterFormRef.current?.requestSubmit()}>
       <form

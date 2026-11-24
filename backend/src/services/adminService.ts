@@ -1,7 +1,6 @@
 import type { Request } from 'express';
 import mongoose from 'mongoose';
 import * as XLSX from 'xlsx';
-import { env } from '../config/env.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { Institute } from '../models/Institute.js';
@@ -438,7 +437,6 @@ export async function exportInstitutes(query: ExportQuery) {
   const rows = await Institute.find(filter)
     .populate('universityId', 'name')
     .sort({ name: 1 })
-    .limit(env.MAX_EXPORT_ROWS)
     .select('name district principalName email mobile status createdAt universityId');
   const headers = ['Institute', 'University', 'District', 'Principal', 'Email', 'Mobile', 'Status', 'Created'];
   const data = rows.map((row) => [
@@ -465,13 +463,23 @@ export async function exportStudents(query: ExportQuery) {
   if (query.course) filter.course = query.course;
   if (query.q) {
     const rx = new RegExp(escapeRegex(query.q), 'i');
-    filter.$or = [{ studentId: rx }, { enrollmentNumber: rx }, { firstName: rx }, { lastName: rx }, { mobile: rx }];
+    const or: Record<string, unknown>[] = [
+      { studentId: rx },
+      { enrollmentNumber: rx },
+      { firstName: rx },
+      { lastName: rx },
+      { mobile: rx }
+    ];
+    const instituteMatches = await Institute.find({ nameNormalized: new RegExp(escapeRegex(query.q).toLowerCase()) }).select('_id');
+    if (instituteMatches.length > 0) {
+      or.push({ instituteId: { $in: instituteMatches.map((institute) => institute._id) } });
+    }
+    filter.$or = or;
   }
   const rows = await Student.find(filter)
     .populate('instituteId', 'name')
     .populate('universityId', 'name')
     .sort({ lastName: 1 })
-    .limit(env.MAX_EXPORT_ROWS)
     .select('studentId enrollmentNumber firstName lastName course academicYear status instituteId universityId');
   const headers = ['Student ID', 'Enrollment Number', 'Name', 'Institute', 'University', 'Course', 'Academic Year', 'Status'];
   const data = rows.map((row) => [

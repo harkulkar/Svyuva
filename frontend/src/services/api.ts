@@ -225,8 +225,11 @@ function downloadBlob(blob: Blob, filename: string) {
   const link = document.createElement('a');
   link.href = url;
   link.download = filename;
+  link.rel = 'noopener';
+  document.body.appendChild(link);
   link.click();
-  URL.revokeObjectURL(url);
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
 export async function fetchStudentMeta(): Promise<StudentMeta> {
@@ -566,7 +569,11 @@ export async function submitDataCorrection(payload: {
 }
 
 export async function downloadAdminExport(path: 'institutes' | 'students', params: Record<string, string | undefined> = {}, format: 'csv' | 'xlsx' = 'csv'): Promise<void> {
-  const response = await api.get(`/api/admin/${path}/export`, { params: { ...params, format }, responseType: 'blob' });
+  const cleanParams: Record<string, string> = {};
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) cleanParams[key] = value;
+  });
+  const response = await api.get(`/api/admin/${path}/export`, { params: { ...cleanParams, format }, responseType: 'blob' });
   downloadBlob(new Blob([response.data]), `${path}.${format}`);
 }
 

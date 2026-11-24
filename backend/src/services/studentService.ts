@@ -162,7 +162,7 @@ async function collegeOwnership(user: AuthUser) {
   return { instituteId, universityId: String(institute.universityId) };
 }
 
-function listFilter(query: StudentListQuery, extra: Record<string, unknown> = {}) {
+async function listFilter(query: StudentListQuery, extra: Record<string, unknown> = {}) {
   const filter: Record<string, unknown> = { ...extra };
   if (query.academicYear) filter.academicYear = query.academicYear;
   if (query.course) filter.course = query.course;
@@ -174,7 +174,7 @@ function listFilter(query: StudentListQuery, extra: Record<string, unknown> = {}
   if (query.submissionId) filter.submissionId = query.submissionId;
   if (query.q) {
     const rx = new RegExp(escapeRegex(query.q), 'i');
-    filter.$or = [
+    const or: Record<string, unknown>[] = [
       { studentId: rx },
       { enrollmentNumber: rx },
       { rollNumber: rx },
@@ -184,6 +184,11 @@ function listFilter(query: StudentListQuery, extra: Record<string, unknown> = {}
       { mobile: rx },
       { email: rx }
     ];
+    const instituteMatches = await Institute.find({ nameNormalized: new RegExp(escapeRegex(query.q).toLowerCase()) }).select('_id');
+    if (instituteMatches.length > 0) {
+      or.push({ instituteId: { $in: instituteMatches.map((institute) => institute._id) } });
+    }
+    filter.$or = or;
   }
   return filter;
 }
@@ -221,7 +226,7 @@ export async function getStudentCounts(instituteId: string) {
 
 export async function listCollegeStudents(user: AuthUser, query: StudentListQuery) {
   const { instituteId } = await collegeOwnership(user);
-  const filter = listFilter(query, { instituteId });
+  const filter = await listFilter(query, { instituteId });
   const skip = (query.page - 1) * query.limit;
   const [total, rows] = await Promise.all([
     Student.countDocuments(filter),
@@ -322,7 +327,7 @@ export async function listAdminStudents(query: AdminStudentListQuery) {
   const extra: Record<string, unknown> = {};
   if (query.instituteId) extra.instituteId = query.instituteId;
   if (query.universityId) extra.universityId = query.universityId;
-  const filter = listFilter(query, extra);
+  const filter = await listFilter(query, extra);
   const skip = (query.page - 1) * query.limit;
   const [total, rows] = await Promise.all([
     Student.countDocuments(filter),

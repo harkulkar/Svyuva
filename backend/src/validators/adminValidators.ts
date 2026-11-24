@@ -3,6 +3,9 @@ import { isStrongPassword } from '../utils/password.js';
 
 const objectId = z.string().regex(/^[a-fA-F0-9]{24}$/, 'Invalid identifier');
 
+const optionalString = z.string().trim().max(120).optional().or(z.literal('').transform(() => undefined));
+const optionalId = objectId.optional().or(z.literal('').transform(() => undefined));
+
 export const paginationQuery = {
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20)
@@ -93,13 +96,13 @@ export const adminSearchQuerySchema = z.object({
 
 export const exportQuerySchema = z.object({
   format: z.enum(['csv', 'xlsx']).default('csv'),
-  q: z.string().trim().max(120).optional(),
-  status: z.enum(['ACTIVE', 'INACTIVE', 'PENDING', 'REJECTED']).optional(),
-  universityId: objectId.optional(),
-  instituteId: objectId.optional(),
-  district: z.string().trim().max(80).optional(),
-  academicYear: z.string().trim().max(16).optional(),
-  course: z.string().trim().max(120).optional()
+  q: z.string().trim().max(120).optional().or(z.literal('').transform(() => undefined)),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'PENDING', 'REJECTED']).optional().or(z.literal('').transform(() => undefined)),
+  universityId: optionalId,
+  instituteId: optionalId,
+  district: z.string().trim().max(80).optional().or(z.literal('').transform(() => undefined)),
+  academicYear: optionalString,
+  course: optionalString
 });
 
 export const adminStudentStatusSchema = z
