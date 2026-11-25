@@ -24,7 +24,8 @@
     "maintenance:check-db": "tsx src/scripts/maintenanceCheckDb.ts",
     "maintenance:check-storage": "tsx src/scripts/maintenanceCheckStorage.ts",
     "maintenance:check-indexes": "tsx src/scripts/maintenanceCheckIndexes.ts",
-    "maintenance:verify-backup": "tsx src/scripts/maintenanceVerifyBackup.ts"
+    "maintenance:verify-backup": "tsx src/scripts/maintenanceVerifyBackup.ts",
+    "maintenance:backfill-payment-institute": "tsx src/scripts/backfillPaymentInstituteName.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

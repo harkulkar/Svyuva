@@ -5,6 +5,7 @@ export const paymentSchema = new Schema(
   {
     studentId: { type: Schema.Types.ObjectId, ref: 'Student', default: null },
     instituteId: { type: Schema.Types.ObjectId, ref: 'Institute', default: null },
+    instituteName: { type: String, trim: true, default: null },
     insuranceId: { type: Schema.Types.ObjectId, ref: 'InsuranceEnrollment', default: null },
     enrollmentId: { type: Schema.Types.ObjectId, ref: 'Enrollment', default: null },
     amount: { type: Number, default: null },

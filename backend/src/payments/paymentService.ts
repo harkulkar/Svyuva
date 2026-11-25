@@ -2,6 +2,7 @@ import type { Request } from 'express';
 import mongoose from 'mongoose';
 import { AppError } from '../middleware/errorHandler.js';
 import { Payment } from '../models/Payment.js';
+import { Institute } from '../models/Institute.js';
 import { UploadJob } from '../models/UploadJob.js';
 import { invalidateDashboardCache } from '../analytics/analytics.service.js';
 import { notifyAdmins, notifyInstituteUsers } from '../notifications/notification.service.js';
@@ -88,6 +89,8 @@ export async function createCollegePaymentOrder(user: AuthUser, input: { jobId: 
   }
   const instituteId = requireCollegeInstituteId(user);
   const { quote, amountPaise } = expected;
+  const institute = await Institute.findById(instituteId).select('name');
+  const instituteName = institute?.name ?? null;
 
   let payment = await Payment.findOne({
     uploadJobId: job._id,
@@ -114,6 +117,7 @@ export async function createCollegePaymentOrder(user: AuthUser, input: { jobId: 
     });
     payment = await Payment.create({
       instituteId,
+      instituteName,
       uploadJobId: job._id,
       createdBy: user.id,
       amount: quote.amountPayable,
@@ -137,6 +141,11 @@ export async function createCollegePaymentOrder(user: AuthUser, input: { jobId: 
       req,
       metadata: { orderId: order.id, amountPaise, mode: config.mode, uploadJobId: String(job._id) }
     });
+  }
+
+  if (!payment.instituteName && instituteName) {
+    await Payment.updateOne({ _id: payment._id }, { $set: { instituteName } });
+    payment.instituteName = instituteName;
   }
 
   job.paymentStatus = 'PAYMENT_PENDING';
