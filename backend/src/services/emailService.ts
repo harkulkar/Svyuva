@@ -160,7 +160,9 @@ export const emailService = {
       subject: 'Password reset',
       text: `A password reset was requested. Open this link if you made the request: ${resetUrl}`,
       template: 'password_reset',
-      notificationType: 'SYSTEM_ALERT'
+      notificationType: 'SYSTEM_ALERT',
+      // Security-critical transactional mail: never gated by the optional email-notification toggle.
+      required: true
     });
   },
 

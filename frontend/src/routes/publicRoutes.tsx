@@ -60,7 +60,6 @@ const CollegeModuleRecordsPage = lazy(() => import('../pages/portal/ModuleRecord
 const AdminModuleRecordsPage = lazy(() => import('../pages/portal/ModuleRecords').then((m) => ({ default: m.AdminModuleRecordsPage })));
 const CollegeProfilePage = lazy(() => import('../pages/college/Profile').then((m) => ({ default: m.CollegeProfilePage })));
 const CollegeStudentsPage = lazy(() => import('../pages/college/Students').then((m) => ({ default: m.CollegeStudentsPage })));
-const CollegeAddStudentPage = lazy(() => import('../pages/college/AddStudent').then((m) => ({ default: m.CollegeAddStudentPage })));
 const CollegeEditStudentPage = lazy(() => import('../pages/college/EditStudent').then((m) => ({ default: m.CollegeEditStudentPage })));
 const CollegeStudentDetailPage = lazy(() => import('../pages/college/StudentDetail').then((m) => ({ default: m.CollegeStudentDetailPage })));
 const CollegeUploadStudentsPage = lazy(() => import('../pages/college/UploadStudents').then((m) => ({ default: m.CollegeUploadStudentsPage })));
@@ -160,7 +159,6 @@ export function AppRoutes() {
         <Route path="/college/submissions/:id/review" element={<CollegeSubmissionReviewPage />} />
         <Route path="/college/submissions/:id" element={<CollegeSubmissionDetailPage />} />
         <Route path="/college/submissions" element={<CollegeSubmissionsPage />} />
-        <Route path="/college/students/add" element={<CollegeAddStudentPage />} />
         <Route path="/college/students/upload" element={<CollegeUploadStudentsPage />} />
         <Route path="/college/students/:id/edit" element={<CollegeEditStudentPage />} />
         <Route path="/college/students/:id" element={<CollegeStudentDetailPage />} />

@@ -37,13 +37,12 @@ function crumbsFor(pathname: string): Array<{ label: string; to?: string }> {
       items.push({ label: 'Students', to: '/college/students' }, { label: 'Edit student' });
       return items;
     }
-    if (/^\/college\/students\/[^/]+$/.test(pathname) && pathname !== '/college/students/add' && pathname !== '/college/students/upload') {
+    if (/^\/college\/students\/[^/]+$/.test(pathname) && pathname !== '/college/students/upload') {
       items.push({ label: 'Students', to: '/college/students' }, { label: 'Student details' });
       return items;
     }
     const map: Record<string, string> = {
       '/college/students': 'Students',
-      '/college/students/add': 'Add student',
       '/college/students/upload': 'Upload students',
       '/college/insurance': 'Insurance',
       '/college/documents': 'Documents',

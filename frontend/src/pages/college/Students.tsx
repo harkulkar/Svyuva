@@ -64,7 +64,6 @@ export function CollegeStudentsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold text-navy">Students</h1>
         <div className="flex gap-2">
-          <Link to="/college/students/add" className="bg-navy px-3 py-2 text-sm font-semibold text-white">Add student</Link>
           <Link to="/college/students/upload" className="border border-navy px-3 py-2 text-sm font-semibold text-navy">Upload Excel</Link>
         </div>
       </div>

@@ -16,7 +16,6 @@ export const COLLEGE_LINKS: PortalNavItem[] = [
     label: 'Students',
     children: [
       { to: '/college/students', label: 'All Students', end: true },
-      { to: '/college/students/add', label: 'Add Student' },
       { to: '/college/students/upload', label: 'Upload Students' }
     ]
   },
@@ -79,7 +78,6 @@ export const ADMIN_BOTTOM_NAV: BottomNavItem[] = [
 export const COLLEGE_QUICK_ACTIONS = [
   { to: '/college/submissions/new', label: 'New Submission' },
   { to: '/college/submissions', label: 'My Submissions' },
-  { to: '/college/students/add', label: 'Add Student' },
   { to: '/college/students/upload', label: 'Upload Students Excel' },
   { to: '/college/documents', label: 'Upload Document' },
   { to: '/college/insurance', label: 'View Insurance' },

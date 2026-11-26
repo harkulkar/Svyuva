@@ -17,6 +17,7 @@ import {
   signAccessToken
 } from '../utils/jwt.js';
 import { comparePassword, hashPassword } from '../utils/password.js';
+import { logger } from '../utils/logger.js';
 import type { LoginInput, SignupInput } from '../validators/authValidators.js';
 import type { Request } from 'express';
 import { collegeMayLoginForCorrection } from '../workflow/engine.js';
@@ -128,11 +129,28 @@ export async function registerCollege(input: SignupInput, req: Request): Promise
   const email = input.email.toLowerCase();
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    throw new AppError('An account with this email already exists.', 409, 'EMAIL_EXISTS');
+    // A leftover COLLEGE account whose institute no longer exists is stale (the college
+    // was removed from the database) and must not block re-registration with the same email.
+    const instituteStillExists = existingUser.instituteId
+      ? await Institute.exists({ _id: existingUser.instituteId })
+      : null;
+    const staleCollege = existingUser.role === 'COLLEGE' && !instituteStillExists;
+    if (!staleCollege) {
+      throw new AppError('An account with this email already exists.', 409, 'EMAIL_EXISTS');
+    }
+    await User.deleteOne({ _id: existingUser._id });
+    await RefreshToken.deleteMany({ userId: existingUser._id });
+    logger.info('stale_college_user_removed', { email });
   }
   const existingInstitute = await Institute.findOne({ email });
   if (existingInstitute) {
-    throw new AppError('An account with this email already exists.', 409, 'EMAIL_EXISTS');
+    // An institute with no linked user is stale (its user was removed) and must not block re-registration.
+    const linkedUser = await User.findOne({ instituteId: existingInstitute._id });
+    if (linkedUser) {
+      throw new AppError('An account with this email already exists.', 409, 'EMAIL_EXISTS');
+    }
+    await Institute.deleteOne({ _id: existingInstitute._id });
+    logger.info('stale_institute_removed', { email });
   }
 
   const university = await University.findOne({ _id: input.universityId, status: 'ACTIVE' });
